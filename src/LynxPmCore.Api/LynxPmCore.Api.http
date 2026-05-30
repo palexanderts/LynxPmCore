@@ -1,0 +1,6 @@
+@LynxPmCore.Api_HostAddress = http://localhost:5015
+
+GET {{LynxPmCore.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
