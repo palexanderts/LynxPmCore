@@ -6,7 +6,7 @@ oracledb.init_oracle_client(lib_dir=r"C:\oracle\instantclient_23_0")
 conn = oracledb.connect(
     user="IBEROPHARMAPROD",
     password=os.environ["IBERO_DB_PASS"],
-    dsn="193.122.157.114:1521/XEPDB1"
+    dsn="193.122.157.114:1521/lemopdb1.sub03121625300.lemovcn.oraclevcn.com"
 )
 
 cur = conn.cursor()
