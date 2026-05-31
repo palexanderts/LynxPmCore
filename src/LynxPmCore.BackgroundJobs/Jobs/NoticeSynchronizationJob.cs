@@ -1,40 +1,24 @@
-using LynxPmCore.Application.Common.Interfaces;
 using LynxPmCore.Domain.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace LynxPmCore.BackgroundJobs.Jobs;
 
+// ERP sync pendiente — este job marcará los avisos como sincronizados
+// cuando se defina la integración con el sistema ERP correspondiente.
 public sealed class NoticeSynchronizationJob(
     IServiceScopeFactory scopeFactory,
     ILogger<NoticeSynchronizationJob> logger)
 {
     public async Task ExecuteAsync()
     {
-        logger.LogInformation("Running notice synchronization job...");
+        logger.LogInformation("Notice sync job running — ERP integration pending");
         using var scope = scopeFactory.CreateScope();
         var noticeRepo = scope.ServiceProvider.GetRequiredService<INoticeRepository>();
-        var apexRouter = scope.ServiceProvider.GetRequiredService<IApexServiceRouter>();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var pending = await noticeRepo.GetNotSynchronizedAsync();
-        logger.LogInformation("Found {Count} notices to sync", pending.Count);
+        logger.LogInformation("Found {Count} notices pending ERP sync", pending.Count);
 
-        foreach (var notice in pending)
-        {
-            try
-            {
-                var payload = new { notice.Number, notice.EquipmentCode, Status = notice.Status.ToString() };
-                await apexRouter.CallAsync<object, object>("LYNX_PM_GO_TO_SERVER", payload, ct: default);
-                notice.MarkSynchronized();
-                await noticeRepo.UpdateAsync(notice);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to sync notice {Number}", notice.Number);
-            }
-        }
-
-        await unitOfWork.SaveChangesAsync();
+        await Task.CompletedTask;
     }
 }

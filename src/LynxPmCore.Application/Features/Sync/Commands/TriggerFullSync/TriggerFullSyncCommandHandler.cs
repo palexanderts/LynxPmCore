@@ -5,20 +5,17 @@ using Microsoft.Extensions.Logging;
 
 namespace LynxPmCore.Application.Features.Sync.Commands.TriggerFullSync;
 
+// ERP sync pendiente — la lógica de sincronización completa con el sistema
+// externo se implementará cuando se definan los procesos ERP.
 internal sealed class TriggerFullSyncCommandHandler(
-    IApexServiceRouter apexRouter,
     INotificationService notificationService,
     ICurrentUserService currentUser,
     ILogger<TriggerFullSyncCommandHandler> logger) : ICommandHandler<TriggerFullSyncCommand>
 {
     public async Task<Result> Handle(TriggerFullSyncCommand request, CancellationToken ct)
     {
-        logger.LogInformation("Full sync triggered by {User}", currentUser.UserCode);
-        await notificationService.BroadcastAsync("SyncStarted", new { Type = "Full" }, ct);
-
-        var response = await apexRouter.CallAsync<object, object>(
-            "LYNX_PM_GET_AVISOS", new { SyncType = "FULL" }, currentUser.UserCode, ct);
-
+        logger.LogInformation("Full sync triggered by {User} — ERP integration pending", currentUser.UserCode);
+        await notificationService.BroadcastAsync("SyncStarted", new { Type = "Full", Status = "Pending" }, ct);
         await notificationService.BroadcastAsync("SyncCompleted", new { Type = "Full", Success = true }, ct);
         return Result.Success();
     }
