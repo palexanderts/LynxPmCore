@@ -9,6 +9,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddBackgroundJobs(this IServiceCollection services)
     {
+        services.AddHttpClient("ErpClient")
+            .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30));
+
         services.AddHangfire(cfg => cfg
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
             .UseSimpleAssemblyNameTypeSerializer()
@@ -19,6 +22,7 @@ public static class DependencyInjection
 
         services.AddSingleton<OutboxProcessorJob>();
         services.AddSingleton<NoticeSynchronizationJob>();
+        services.AddSingleton<ErpSynchronizationJob>();
 
         return services;
     }
@@ -34,5 +38,10 @@ public static class DependencyInjection
             "notice-sync",
             job => job.ExecuteAsync(),
             "*/5 * * * *");
+
+        RecurringJob.AddOrUpdate<ErpSynchronizationJob>(
+            "erp-sync",
+            job => job.ExecuteAsync(),
+            "*/2 * * * *");
     }
 }

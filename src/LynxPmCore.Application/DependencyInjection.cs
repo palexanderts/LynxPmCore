@@ -1,6 +1,8 @@
 using System.Reflection;
 using FluentValidation;
 using LynxPmCore.Application.Common.Behaviors;
+using LynxPmCore.Application.Common.Interfaces;
+using LynxPmCore.Application.Services;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +25,7 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);
         services.AddAutoMapper(assembly);
+        services.AddScoped<IErpSyncOutboxService, ErpSyncOutboxService>();
 
         return services;
     }

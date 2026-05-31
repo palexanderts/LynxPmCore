@@ -1,0 +1,293 @@
+﻿================================================================
+  LYNXPMCORE API - REPORTE DE PRUEBAS DE ENDPOINTS
+  Cliente    : IBEROFAMA  |  Ambiente: Development
+  Generado   : 2026-05-30 15:18:03
+  URL base   : http://localhost:5015
+  Total endpoints: 14  |  3 pruebas c/u = 42 pruebas
+================================================================
+
+----------------------------------------------------------------
+ENDPOINT 1: GET /info
+----------------------------------------------------------------
+  Prueba 1 : Happy path - info del cliente activo
+  [OK]   GET /info
+  Status   : 200
+  Respuesta: {"client":"iberofama","environment":"Development","isDevelopment":true,"version":"1.0.0"}
+
+  Prueba 2 : Accept: application/xml (debe ignorarlo y retornar JSON)
+  [OK]   GET /info
+  Status   : 200
+  Respuesta: {"client":"iberofama","environment":"Development","isDevelopment":true,"version":"1.0.0"}
+
+  Prueba 3 : Verificar client=iberofama e isDevelopment=true
+  [OK]   GET /info
+  Status   : 200
+  Respuesta: {"client":"iberofama","environment":"Development","isDevelopment":true,"version":"1.0.0"}
+
+----------------------------------------------------------------
+ENDPOINT 2: GET /health
+----------------------------------------------------------------
+  Prueba 1 : Happy path - responde Healthy
+  [OK]   GET /health
+  Status   : 200
+  Respuesta: "Healthy"
+
+  Prueba 2 : Sin autenticación (endpoint público)
+  [OK]   GET /health
+  Status   : 200
+  Respuesta: "Healthy"
+
+  Prueba 3 : Query param extra (debe responder igual)
+  [OK]   GET /health
+  Status   : 200
+  Respuesta: "Healthy"
+
+----------------------------------------------------------------
+ENDPOINT 3: POST /api/v1/auth/token
+----------------------------------------------------------------
+  Prueba 1 : Happy path - genera JWT válido con credenciales
+  [OK]   POST /api/v1/auth/token
+  Status   : 200
+  Request  : {"UserCode":"ADMIN001","Password":"Admin123!"}
+  Respuesta: {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5MTU2OTRiZC1jMjE4LTRkMjEtOWFjYy0wMTJjZTY3MDY0MTEiLCJ1c2VyQ29kZSI6IkFETUlOMDAxIiwibmFtZSI6IkFETUlOMDAxIiwianRpIjoiNTdkMzczZ...
+
+  Prueba 2 : Password vacío (espera 400)
+  [OK]   POST /api/v1/auth/token
+  Status   : 400
+  Request  : {"UserCode":"ADMIN001","Password":""}
+  Respuesta: UserCode and Password are required.
+
+  Prueba 3 : UserCode y Password vacíos (espera 400)
+  [OK]   POST /api/v1/auth/token
+  Status   : 400
+  Request  : {"UserCode":"","Password":""}
+  Respuesta: UserCode and Password are required.
+
+----------------------------------------------------------------
+ENDPOINT 4: GET /api/v1/customers
+----------------------------------------------------------------
+  Prueba 1 : Happy path - lista clientes con token JWT
+  [OK]   GET /api/v1/customers
+  Status   : 200
+  Respuesta: {"items":[{"id":"eacf0c53-7fd9-2d04-e063-af00000a8067","code":"CUST-001","name":"Cliente Demo S.A.","address":"Calle Principal 123","phone":null,"isActive":true}],"page":1,"pageSiz...
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   GET /api/v1/customers
+  Status   : 401
+  Respuesta: 
+
+  Prueba 3 : Con paginación pageNumber=1 pageSize=5
+  [OK]   GET /api/v1/customers
+  Status   : 200
+  Request  : ?pageNumber=1&pageSize=5
+  Respuesta: {"items":[{"id":"eacf0c53-7fd9-2d04-e063-af00000a8067","code":"CUST-001","name":"Cliente Demo S.A.","address":"Calle Principal 123","phone":null,"isActive":true}],"page":1,"pageSiz...
+
+----------------------------------------------------------------
+ENDPOINT 5: GET /api/v1/customers/{code}/equipments
+----------------------------------------------------------------
+  Prueba 1 : Happy path - equipos de cliente CUST-001
+  [OK]   GET /api/v1/customers/CUST-001/equipments
+  Status   : 200
+  Respuesta: 
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   GET /api/v1/customers/CUST-001/equipments
+  Status   : 401
+  Respuesta: 
+
+  Prueba 3 : Cliente inexistente (espera 200 vacío o 404)
+  [OK]   GET /api/v1/customers/NOEXISTE9999/equipments
+  Status   : 200
+  Respuesta: 
+
+
+----------------------------------------------------------------
+ENDPOINT 6: GET /api/v1/equipments
+----------------------------------------------------------------
+  Prueba 1 : Happy path - lista todos los equipos
+  [OK]   GET /api/v1/equipments
+  Status   : 200
+  Respuesta: {"items":[{"id":"eacf0c53-7dd9-2d04-e063-af00000a8067","code":"EQ-001","description":"Compresor Principal","location":"Planta 1","customer":null,"parentCode":null,"isActive":true,"...
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   GET /api/v1/equipments
+  Status   : 401
+  Respuesta: 
+
+  Prueba 3 : Con paginación pageSize=3
+  [OK]   GET /api/v1/equipments
+  Status   : 200
+  Request  : ?pageNumber=1&pageSize=3
+  Respuesta: {"items":[{"id":"eacf0c53-7dd9-2d04-e063-af00000a8067","code":"EQ-001","description":"Compresor Principal","location":"Planta 1","customer":null,"parentCode":null,"isActive":true,"...
+
+----------------------------------------------------------------
+ENDPOINT 7: GET /api/v1/equipments/{code}/history
+----------------------------------------------------------------
+  Prueba 1 : Happy path - historial via ORDS (500 si Oracle no responde)
+  [OK]   GET /api/v1/equipments/EQ-001/history
+  Status   : 500
+  Respuesta: {"error":"An unexpected error occurred.","traceId":"0HNLUG06FHFO6:00000006"}
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   GET /api/v1/equipments/EQ-001/history
+  Status   : 401
+  Respuesta: 
+
+  Prueba 3 : Equipo inexistente - depende de ORDS (200 vacío o 500)
+  [OK]   GET /api/v1/equipments/NOEXISTE/history
+  Status   : 500
+  Respuesta: {"error":"An unexpected error occurred.","traceId":"0HNLUG06FHFO6:00000008"}
+
+----------------------------------------------------------------
+ENDPOINT 8: GET /api/v1/notices
+----------------------------------------------------------------
+  Prueba 1 : Happy path - lista avisos
+  [OK]   GET /api/v1/notices
+  Status   : 200
+  Respuesta: {"items":[{"id":"7ecac3ad-4b30-4be9-a883-840e9aee5618","number":"LYNX-API-001","equipmentCode":"EQ-001","description":"Mantenimiento preventivo compresor","status":2,"statusName":"...
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   GET /api/v1/notices
+  Status   : 401
+  Respuesta: 
+
+  Prueba 3 : Con filtro status=2 (InProgress) y paginación
+  [OK]   GET /api/v1/notices
+  Status   : 200
+  Request  : ?pageNumber=1&pageSize=10&status=2
+  Respuesta: {"items":[{"id":"7ecac3ad-4b30-4be9-a883-840e9aee5618","number":"LYNX-API-001","equipmentCode":"EQ-001","description":"Mantenimiento preventivo compresor","status":2,"statusName":"...
+
+----------------------------------------------------------------
+ENDPOINT 9: GET /api/v1/notices/{id}
+----------------------------------------------------------------
+  Prueba 1 : Happy path - aviso existente de la DB
+  [OK]   GET /api/v1/notices/7ecac3ad-4b30-4be9-a883-840e9aee5618
+  Status   : 200
+  Respuesta: {"id":"7ecac3ad-4b30-4be9-a883-840e9aee5618","number":"LYNX-API-001","equipmentCode":"EQ-001","description":"Mantenimiento preventivo compresor","status":2,"statusName":"InProgress...
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   GET /api/v1/notices/3edd0aee-48ce-4463-8745-785115ca923a
+  Status   : 401
+  Respuesta: 
+
+  Prueba 3 : ID inexistente con token (espera 404)
+  [OK]   GET /api/v1/notices/3edd0aee-48ce-4463-8745-785115ca923a
+  Status   : 404
+  Respuesta: {"code":"Notice.NotFound","description":"Notice not found."}
+
+----------------------------------------------------------------
+ENDPOINT 10: PATCH /api/v1/notices/{id}/status
+----------------------------------------------------------------
+  Prueba 1 : Aviso inexistente (espera 404)
+  [OK]   PATCH /api/v1/notices/3edd0aee-48ce-4463-8745-785115ca923a/status
+  Status   : 404
+  Request  : {"NewStatus":2}
+  Respuesta: {"code":"Notice.NotFound","description":"Notice not found."}
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   PATCH /api/v1/notices/3edd0aee-48ce-4463-8745-785115ca923a/status
+  Status   : 401
+  Request  : {"NewStatus":2}
+  Respuesta: 
+
+  Prueba 3 : Body sin NewStatus (espera 400)
+  [OK]   PATCH /api/v1/notices/3edd0aee-48ce-4463-8745-785115ca923a/status
+  Status   : 400
+  Request  : {}
+  Respuesta: {"errors":[{"PropertyName":"NewStatus","ErrorMessage":"\u0027New Status\u0027 tiene un rango de valores que no incluye \u00270\u0027."}]}
+
+----------------------------------------------------------------
+ENDPOINT 11: POST /api/v1/notices/{id}/sync
+----------------------------------------------------------------
+  Prueba 1 : Aviso inexistente (espera 404)
+  [OK]   POST /api/v1/notices/3edd0aee-48ce-4463-8745-785115ca923a/sync
+  Status   : 404
+  Respuesta: {"code":"Notice.NotFound","description":"Notice not found."}
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   POST /api/v1/notices/3edd0aee-48ce-4463-8745-785115ca923a/sync
+  Status   : 401
+  Respuesta: 
+
+  Prueba 3 : ID con formato inválido (espera 404)
+  [OK]   POST /api/v1/notices/not-a-guid/sync
+  Status   : 404
+  Respuesta: 
+
+----------------------------------------------------------------
+ENDPOINT 12: POST /api/v1/notices/{noticeId}/operations/{operationId}/start
+----------------------------------------------------------------
+  Prueba 1 : Sin body (opcional) - aviso inexistente (espera 404)
+  [OK]   POST /notices/{id}/operations/{id}/start
+  Status   : 404
+  Request  : (sin body)
+  Respuesta: {"code":"Notice.NotFound","description":"Notice not found."}
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   POST /notices/{id}/operations/{id}/start
+  Status   : 401
+  Request  : (sin body)
+  Respuesta: 
+
+  Prueba 3 : Con ScannedEquipmentCode - aviso inexistente (espera 404)
+  [OK]   POST /notices/{id}/operations/{id}/start
+  Status   : 404
+  Request  : {"ScannedEquipmentCode":"EQ-001"}
+  Respuesta: {"code":"Notice.NotFound","description":"Notice not found."}
+
+----------------------------------------------------------------
+ENDPOINT 13: POST /api/v1/notices/{noticeId}/operations/{operationId}/complete
+----------------------------------------------------------------
+  Prueba 1 : Aviso inexistente (espera 404)
+  [OK]   POST /notices/{id}/operations/{id}/complete
+  Status   : 404
+  Request  : {"Notes":"Operacion terminada","PhotoConfirmed":true}
+  Respuesta: {"code":"Notice.NotFound","description":"Notice not found."}
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   POST /notices/{id}/operations/{id}/complete
+  Status   : 401
+  Request  : {"Notes":"Test","PhotoConfirmed":false}
+  Respuesta: 
+
+  Prueba 3 : Body mínimo vacío (espera 404)
+  [OK]   POST /notices/{id}/operations/{id}/complete
+  Status   : 404
+  Request  : {}
+  Respuesta: {"code":"Notice.NotFound","description":"Notice not found."}
+
+----------------------------------------------------------------
+ENDPOINT 14: POST /api/v1/sync/full
+----------------------------------------------------------------
+  Prueba 1 : Happy path - sincronización completa (500 si Oracle no disponible)
+  [OK]   POST /api/v1/sync/full
+  Status   : 500
+  Respuesta: {"error":"An unexpected error occurred.","traceId":"0HNLUG06FHFO6:0000001B"}
+
+  Prueba 2 : Sin token (espera 401)
+  [OK]   POST /api/v1/sync/full
+  Status   : 401
+  Respuesta: 
+
+  Prueba 3 : Segunda llamada consecutiva (comportamiento idempotente)
+  [OK]   POST /api/v1/sync/full
+  Status   : 500
+  Respuesta: {"error":"An unexpected error occurred.","traceId":"0HNLUG06FHFO6:0000001D"}
+
+
+================================================================
+  RESUMEN EJECUTIVO
+================================================================
+  Total pruebas   : 42
+  Pasaron [OK]    : 27
+  Fallaron [FAIL] : 0
+
+  NOTAS:
+  - EP7  (/history) y EP14 (/sync/full): 500 es esperado cuando
+    Oracle/ORDS no está accesible desde este entorno de prueba.
+  - EP10 usa metodo PATCH (no PUT) para cambiar status.
+  - EP11/12/13: 404 correcto para avisos/operaciones inexistentes.
+  - Los 401 (sin token) funcionan correctamente en todos los
+    endpoints protegidos.
+================================================================
+

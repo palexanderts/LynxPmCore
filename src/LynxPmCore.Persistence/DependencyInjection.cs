@@ -27,6 +27,8 @@ public static class DependencyInjection
         services.AddScoped<INoticeRepository, NoticeRepository>();
         services.AddScoped<IEquipmentRepository, EquipmentRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<IErpSyncConfigRepository, ErpSyncConfigRepository>();
+        services.AddScoped<IErpSyncOutboxRepository, ErpSyncOutboxRepository>();
         services.AddScoped<IUnitOfWork, LynxPmCore.Persistence.UnitOfWork.UnitOfWork>();
         services.AddScoped<OutboxProcessor>();
 

@@ -1,0 +1,465 @@
+============================================================
+API TEST REPORT — LynxPmCore API (IBEROFAMA / Production)
+Base URL  : http://129.213.155.24/lynxpm
+Auth      : Ninguna (política abierta)
+Fecha     : 2026-05-31
+============================================================
+
+
+========================================
+ENDPOINT : GET /info
+ESCENARIO: 1 — Happy path
+FECHA    : 2026-05-31 03:58
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/info
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : {"client":"iberofama","environment":"Production","isDevelopment":false,"version":"1.0.0"}
+
+RESULTADO: PASS ✓
+NOTAS    : Devuelve correctamente cliente, entorno y versión.
+========================================
+
+========================================
+ENDPOINT : GET /info
+ESCENARIO: 2 — Parámetro extra irrelevante
+FECHA    : 2026-05-31 03:58
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/info?foo=bar
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : {"client":"iberofama","environment":"Production","isDevelopment":false,"version":"1.0.0"}
+
+RESULTADO: PASS ✓
+NOTAS    : Ignora parámetros desconocidos correctamente.
+========================================
+
+========================================
+ENDPOINT : GET /info
+ESCENARIO: 3 — Método incorrecto (POST)
+FECHA    : 2026-05-31 03:58
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/info  [POST]
+  Headers: (ninguno)
+  Body   : {}
+
+RESPONSE
+  Status : 405 Method Not Allowed
+  Body   : (vacío)
+
+RESULTADO: PASS ✓
+NOTAS    : Rechaza métodos no permitidos correctamente.
+========================================
+
+
+========================================
+ENDPOINT : GET /api/v1/customers
+ESCENARIO: 1 — Happy path
+FECHA    : 2026-05-31 03:59
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/customers?page=1&pageSize=5
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : {"items":[{"id":"eacf0c53-...","code":"CUST-001","name":"Cliente Demo S.A.","isActive":true}],
+            "page":1,"pageSize":5,"totalCount":1,"hasNextPage":false,"hasPreviousPage":false}
+
+RESULTADO: PASS ✓
+NOTAS    : 1 cliente en BD. Paginación correcta.
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/customers
+ESCENARIO: 2 — Página fuera de rango (vacío)
+FECHA    : 2026-05-31 03:59
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/customers?page=99999&pageSize=50
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : {"items":[],"page":99999,"pageSize":50,"totalCount":1,"hasNextPage":false,"hasPreviousPage":true}
+
+RESULTADO: PASS ✓
+NOTAS    : Devuelve lista vacía con metadata correcta (totalCount=1, hasPreviousPage=true).
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/customers
+ESCENARIO: 3 — Parámetro inválido (page=abc)
+FECHA    : 2026-05-31 03:59
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/customers?page=abc&pageSize=50
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 400
+  Body   : {"type":"...rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,
+            "errors":{"page":["The value 'abc' is not valid."]}}
+
+RESULTADO: PASS ✓
+NOTAS    : Validación de tipo funciona correctamente.
+========================================
+
+
+========================================
+ENDPOINT : GET /api/v1/customers/{code}/equipments
+ESCENARIO: 1 — Happy path (cliente existente)
+FECHA    : 2026-05-31 04:00
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/customers/CUST-001/equipments
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : []
+
+RESULTADO: PASS ✓ (con observación)
+NOTAS    : El cliente CUST-001 existe pero no tiene equipos asignados en BD. Lista vacía es respuesta válida.
+           PENDIENTE: Cargar datos de equipos asociados al cliente para prueba más completa.
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/customers/{code}/equipments
+ESCENARIO: 2 — Cliente inexistente
+FECHA    : 2026-05-31 04:00
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/customers/CUST-NO-EXISTE/equipments
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : []
+
+RESULTADO: PASS ✓ (con observación)
+NOTAS    : Devuelve lista vacía en lugar de 404. Comportamiento aceptable para colecciones.
+           Podría ser 404 si se quiere diferenciar "cliente no encontrado" de "cliente sin equipos".
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/customers/{code}/equipments
+ESCENARIO: 3 — Code vacío / espacio
+FECHA    : 2026-05-31 04:00
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/customers/%20/equipments
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 400
+  Body   : {"errors":{"code":["The code field is required."]}}
+
+RESULTADO: PASS ✓
+NOTAS    : Validación de campo requerido funciona en ruta.
+========================================
+
+
+========================================
+ENDPOINT : GET /api/v1/equipments
+ESCENARIO: 1 — Happy path
+FECHA    : 2026-05-31 04:01
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/equipments?page=1&pageSize=5
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : totalCount=2, items=2. first_code=EQ-001
+
+RESULTADO: PASS ✓
+NOTAS    : 2 equipos en BD. Orden y paginación correctos.
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/equipments
+ESCENARIO: 2 — Búsqueda sin resultados
+FECHA    : 2026-05-31 04:01
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/equipments?search=XXXXXXXXX
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : {"totalCount":0,"items":[]}
+
+RESULTADO: PASS ✓
+NOTAS    : Búsqueda sin coincidencias devuelve lista vacía correctamente.
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/equipments
+ESCENARIO: 3 — pageSize negativo
+FECHA    : 2026-05-31 04:01
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/equipments?pageSize=-1
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : {"items":[],"page":1,"pageSize":-1,"totalCount":2,"hasNextPage":true,"hasPreviousPage":false}
+
+RESULTADO: FAIL ✗
+NOTAS    : BUG — pageSize=-1 acepta el valor sin validar. Devuelve items[] vacío pero totalCount=2
+           y hasNextPage=true, lo que es inconsistente. Debería retornar 400 o clamp a pageSize=1.
+           RECOMENDACIÓN: Agregar validación [Range(1, 200)] al parámetro pageSize.
+========================================
+
+
+========================================
+ENDPOINT : GET /api/v1/equipments/{code}/history
+ESCENARIO: 1 — Happy path (equipo existente)
+FECHA    : 2026-05-31 04:02
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/equipments/EQ-001/history
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 500
+  Body   : {"error":"An unexpected error occurred.","traceId":"0HNLUP1J6IK79:00000001"}
+
+RESULTADO: FAIL ✗
+NOTAS    : ERROR CONOCIDO — El handler llama a IApexServiceRouter (ORDS Oracle APEX).
+           El servidor lemoappserver no tiene conectividad con el servidor Oracle APEX de Iberofama.
+           La llamada al servicio LYNX_PM_GET_EQUIPMENT_HISTORY falla en red.
+           ALTERNATIVA: Usar POST /Index?Service=GET_EQUIPMENT_HISTORY (lee desde DB local).
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/equipments/{code}/history
+ESCENARIO: 2 — Equipo inexistente
+FECHA    : 2026-05-31 04:02
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/equipments/NO-EXISTE/history
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 500
+  Body   : {"error":"An unexpected error occurred."}
+
+RESULTADO: FAIL ✗
+NOTAS    : Mismo error de conectividad APEX. El endpoint no llega a validar si el equipo existe.
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/equipments/{code}/history
+ESCENARIO: 3 — Code vacío/espacio
+FECHA    : 2026-05-31 04:02
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/equipments/%20/history
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 400
+  Body   : {"errors":{"code":["The code field is required."]}}
+
+RESULTADO: PASS ✓
+NOTAS    : La validación de parámetro de ruta funciona antes de llamar a APEX.
+========================================
+
+
+========================================
+ENDPOINT : GET /api/v1/equipments/{code}/media
+ESCENARIO: 1 — Happy path (equipo existente)
+FECHA    : 2026-05-31 04:03
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/equipments/EQ-001/media
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : []
+
+RESULTADO: PASS ✓ (con observación)
+NOTAS    : EQ-001 existe pero no tiene media registrada aún. Lista vacía es válida.
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/equipments/{code}/media
+ESCENARIO: 2 — Equipo inexistente
+FECHA    : 2026-05-31 04:03
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/equipments/NO-EXISTE/media
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : []
+
+RESULTADO: PASS ✓ (con observación)
+NOTAS    : Devuelve array vacío aunque el equipo no exista. Consistente con patrón de colección.
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/equipments/{code}/media
+ESCENARIO: 3 — Code numérico (inusual)
+FECHA    : 2026-05-31 04:03
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/equipments/00000/media
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : []
+
+RESULTADO: PASS ✓
+NOTAS    : Acepta cualquier string como código. Devuelve vacío al no encontrar media.
+========================================
+
+
+========================================
+ENDPOINT : GET /api/v1/notices
+ESCENARIO: 1 — Happy path
+FECHA    : 2026-05-31 04:04
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/notices?page=1&pageSize=5
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : totalCount=1, items=1. first_id=7ecac3ad-4b30-4be9-a883-840e9aee5618, number=LYNX-API-001
+
+RESULTADO: PASS ✓
+NOTAS    : 1 aviso en BD. Paginación y datos correctos.
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/notices
+ESCENARIO: 2 — Status enum inválido
+FECHA    : 2026-05-31 04:04
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/notices?status=999
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 400
+  Body   : {"errors":{"status":["The value '999' is invalid."]}}
+
+RESULTADO: PASS ✓
+NOTAS    : Validación de enum funciona correctamente.
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/notices
+ESCENARIO: 3 — page como string
+FECHA    : 2026-05-31 04:04
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/notices?page=abc
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 400
+  Body   : {"errors":{"page":["The value 'abc' is not valid."]}}
+
+RESULTADO: PASS ✓
+NOTAS    : Validación de tipo funciona correctamente.
+========================================
+
+
+========================================
+ENDPOINT : GET /api/v1/notices/{id}
+ESCENARIO: 1 — Happy path (ID existente)
+FECHA    : 2026-05-31 04:05
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/notices/7ecac3ad-4b30-4be9-a883-840e9aee5618
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 200
+  Body   : number=LYNX-API-001, status=2 (InProgress), equipment=EQ-001,
+            mediaCount=0, opsCount=0
+
+RESULTADO: PASS ✓
+NOTAS    : Devuelve aviso completo con todos los campos. mediaCount y opsCount en 0 (datos de prueba).
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/notices/{id}
+ESCENARIO: 2 — ID GUID zeros (no encontrado)
+FECHA    : 2026-05-31 04:05
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/notices/00000000-0000-0000-0000-000000000000
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 404
+  Body   : {"code":"Notice.NotFound","description":"Notice not found."}
+
+RESULTADO: PASS ✓
+NOTAS    : 404 correcto con error estructurado (code + description).
+========================================
+
+========================================
+ENDPOINT : GET /api/v1/notices/{id}
+ESCENARIO: 3 — ID no es GUID (string inválido)
+FECHA    : 2026-05-31 04:05
+----------------------------------------
+REQUEST
+  URL    : http://129.213.155.24/lynxpm/api/v1/notices/not-a-guid
+  Headers: (ninguno)
+  Body   : N/A
+
+RESPONSE
+  Status : 404
+  Body   : (vacío)
+
+RESULTADO: FAIL ✗
+NOTAS    : Debería retornar 400 Bad Request con mensaje de validación.
+           ASP.NET Core route constraint {id:guid} falla silenciosamente → caída a 404 sin cuerpo.
+           RECOMENDACIÓN: Agregar mensaje de error explícito o usar 400 en la respuesta de ruta inválida.
+========================================
+
+
+============================================================
+                    FASE 2 — POSTs / PATCH / DELETE
+============================================================
+[pendiente — ver bloques a continuación según se completen]
+

@@ -1,5 +1,6 @@
 using LynxPmCore.Domain.Aggregates.Customers;
 using LynxPmCore.Domain.Aggregates.Equipments;
+using LynxPmCore.Domain.Aggregates.ErpSync;
 using LynxPmCore.Domain.Aggregates.Notices;
 using LynxPmCore.Domain.Primitives;
 using LynxPmCore.Persistence.Outbox;
@@ -16,6 +17,8 @@ public sealed class LynxPmDbContext(DbContextOptions<LynxPmDbContext> options) :
     public DbSet<EquipmentMedia> EquipmentMediaItems => Set<EquipmentMedia>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<ErpSyncConfig> ErpSyncConfigs => Set<ErpSyncConfig>();
+    public DbSet<ErpSyncOutboxEntry> ErpSyncOutbox => Set<ErpSyncOutboxEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
