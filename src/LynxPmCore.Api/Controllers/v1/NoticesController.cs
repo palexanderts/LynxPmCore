@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using LynxPmCore.Api.Extensions;
 using LynxPmCore.Application.Features.Notices.Commands.ChangeNoticeStatus;
 using LynxPmCore.Application.Features.Notices.Commands.CompleteOperation;
 using LynxPmCore.Application.Features.Notices.Commands.CreateNotice;
@@ -10,6 +11,7 @@ using LynxPmCore.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace LynxPmCore.Api.Controllers.v1;
 
@@ -51,25 +53,25 @@ public sealed class NoticesController(ISender sender) : ControllerBase
     public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangeNoticeStatusRequest request, CancellationToken ct)
     {
         var result = await sender.Send(new ChangeNoticeStatusCommand(id, request.NewStatus), ct);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+        return result.ToActionResult(this);
     }
 
     [HttpPost("{id:guid}/sync")]
     public async Task<IActionResult> Synchronize(Guid id, CancellationToken ct)
     {
         var result = await sender.Send(new SynchronizeNoticeCommand(id), ct);
-        return result.IsSuccess ? Ok() : BadRequest(result.Error);
+        return result.IsSuccess ? Ok() : result.Error.Code.EndsWith(".NotFound") ? NotFound(result.Error) : BadRequest(result.Error);
     }
 
     [HttpPost("{noticeId:guid}/operations/{operationId:guid}/start")]
     public async Task<IActionResult> StartOperation(
         Guid noticeId, Guid operationId,
-        [FromBody] StartOperationRequest request,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] StartOperationRequest? request,
         CancellationToken ct)
     {
         var result = await sender.Send(
-            new StartOperationCommand(noticeId, operationId, request.ScannedEquipmentCode), ct);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+            new StartOperationCommand(noticeId, operationId, request?.ScannedEquipmentCode), ct);
+        return result.ToActionResult(this);
     }
 
     [HttpPost("{noticeId:guid}/operations/{operationId:guid}/complete")]
@@ -80,7 +82,7 @@ public sealed class NoticesController(ISender sender) : ControllerBase
     {
         var result = await sender.Send(
             new CompleteOperationCommand(noticeId, operationId, request.Notes, request.PhotoConfirmed), ct);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+        return result.ToActionResult(this);
     }
 }
 

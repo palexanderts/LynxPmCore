@@ -57,6 +57,11 @@ builder.Services.AddApiVersioning(opts =>
 });
 
 builder.Services.AddControllers();
+
+// Sin autenticación requerida — todos los endpoints son públicos
+builder.Services.AddAuthorization(opts =>
+    opts.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAssertion(_ => true).Build());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opts =>
 {
@@ -113,7 +118,7 @@ app.UseSerilogRequestLogging();
 app.UseSwagger();
 app.UseSwaggerUI(opts =>
 {
-    opts.SwaggerEndpoint("/swagger/v1/swagger.json", $"LynxPmCore v1 [{lynxClient}]");
+    opts.SwaggerEndpoint("./swagger/v1/swagger.json", $"LynxPmCore v1 [{lynxClient}]");
     opts.RoutePrefix = string.Empty;
     opts.DocumentTitle = $"LynxPmCore — {lynxClient.ToUpperInvariant()}";
 });

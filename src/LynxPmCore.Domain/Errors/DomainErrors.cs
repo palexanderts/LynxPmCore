@@ -27,6 +27,7 @@ public static class DomainErrors
     {
         public static readonly Error NotFound = new("Equipment.NotFound", "Equipment not found.");
         public static readonly Error InvalidCode = new("Equipment.InvalidCode", "Equipment code is invalid.");
+        public static readonly Error MediaNotFound = new("Equipment.Media.NotFound", "Equipment media not found.");
     }
 
     public static class Customer

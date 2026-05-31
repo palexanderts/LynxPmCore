@@ -10,6 +10,7 @@ public sealed class EquipmentDto
     public string? ParentCode { get; set; }
     public bool IsActive { get; set; }
     public DateTime? LastSyncAt { get; set; }
+    public List<EquipmentMediaDto> Media { get; set; } = [];
 }
 
 public sealed class EquipmentHistoryDto

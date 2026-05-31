@@ -24,5 +24,11 @@ internal sealed class EquipmentConfiguration : IEntityTypeConfiguration<Equipmen
 
         builder.HasIndex(e => e.Code).IsUnique();
         builder.HasIndex(e => e.Customer);
+
+        builder.HasMany(e => e.Media)
+            .WithOne()
+            .HasForeignKey(m => m.EquipmentCode)
+            .HasPrincipalKey(e => e.Code)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

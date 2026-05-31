@@ -9,5 +9,6 @@ public sealed class EquipmentProfile : Profile
     public EquipmentProfile()
     {
         CreateMap<Equipment, EquipmentDto>();
+        CreateMap<EquipmentMedia, EquipmentMediaDto>();
     }
 }

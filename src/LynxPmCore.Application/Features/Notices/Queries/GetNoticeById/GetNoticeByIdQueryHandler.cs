@@ -9,6 +9,7 @@ namespace LynxPmCore.Application.Features.Notices.Queries.GetNoticeById;
 
 internal sealed class GetNoticeByIdQueryHandler(
     INoticeRepository noticeRepository,
+    IEquipmentRepository equipmentRepository,
     IMapper mapper) : IQueryHandler<GetNoticeByIdQuery, NoticeDto>
 {
     public async Task<Result<NoticeDto>> Handle(GetNoticeByIdQuery request, CancellationToken ct)
@@ -17,6 +18,11 @@ internal sealed class GetNoticeByIdQueryHandler(
         if (notice is null)
             return Result.Failure<NoticeDto>(DomainErrors.Notice.NotFound);
 
-        return Result.Success(mapper.Map<NoticeDto>(notice));
+        var dto = mapper.Map<NoticeDto>(notice);
+
+        var media = await equipmentRepository.GetMediaByCodeAsync(notice.EquipmentCode, ct);
+        dto.EquipmentMedia = mapper.Map<List<EquipmentMediaDto>>(media);
+
+        return Result.Success(dto);
     }
 }

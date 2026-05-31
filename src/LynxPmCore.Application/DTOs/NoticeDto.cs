@@ -21,6 +21,7 @@ public sealed class NoticeDto
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<OperationDto> Operations { get; set; } = [];
+    public List<EquipmentMediaDto> EquipmentMedia { get; set; } = [];
 }
 
 public sealed class NoticeListDto

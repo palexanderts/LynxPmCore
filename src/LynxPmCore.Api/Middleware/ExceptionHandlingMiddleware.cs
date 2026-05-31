@@ -15,7 +15,7 @@ internal sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<
         catch (ValidationException ex)
         {
             logger.LogWarning(ex, "Validation error");
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            context.Response.StatusCode = (int)HttpStatusCode.UnprocessableEntity;
             context.Response.ContentType = "application/json";
             var errors = ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
             await context.Response.WriteAsync(JsonSerializer.Serialize(new { errors }));

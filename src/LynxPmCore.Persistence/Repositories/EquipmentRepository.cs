@@ -22,6 +22,7 @@ internal sealed class EquipmentRepository(LynxPmDbContext db) : IEquipmentReposi
 
         var total = await query.CountAsync(ct);
         var items = await query
+            .Include(e => e.Media.Where(m => !m.IsDeleted))
             .OrderBy(e => e.Code)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -50,4 +51,17 @@ internal sealed class EquipmentRepository(LynxPmDbContext db) : IEquipmentReposi
         foreach (var equipment in equipments)
             await UpsertAsync(equipment, ct);
     }
+
+    public async Task<IReadOnlyList<EquipmentMedia>> GetMediaByCodeAsync(string code, CancellationToken ct = default)
+        => await db.EquipmentMediaItems
+            .AsNoTracking()
+            .Where(m => m.EquipmentCode == code.ToUpperInvariant() && !m.IsDeleted)
+            .OrderBy(m => m.Position).ThenBy(m => m.CreatedAt)
+            .ToListAsync(ct);
+
+    public async Task<EquipmentMedia?> GetMediaByIdAsync(Guid id, CancellationToken ct = default)
+        => await db.EquipmentMediaItems.FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted, ct);
+
+    public async Task AddMediaAsync(EquipmentMedia media, CancellationToken ct = default)
+        => await db.EquipmentMediaItems.AddAsync(media, ct);
 }

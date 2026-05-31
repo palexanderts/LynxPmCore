@@ -13,4 +13,8 @@ public interface IEquipmentRepository
     Task<IReadOnlyList<Equipment>> GetByCustomerAsync(string customerCode, CancellationToken ct = default);
     Task UpsertAsync(Equipment equipment, CancellationToken ct = default);
     Task UpsertManyAsync(IEnumerable<Equipment> equipments, CancellationToken ct = default);
+
+    Task<IReadOnlyList<EquipmentMedia>> GetMediaByCodeAsync(string code, CancellationToken ct = default);
+    Task<EquipmentMedia?> GetMediaByIdAsync(Guid id, CancellationToken ct = default);
+    Task AddMediaAsync(EquipmentMedia media, CancellationToken ct = default);
 }

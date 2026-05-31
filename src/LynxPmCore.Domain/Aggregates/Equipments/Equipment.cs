@@ -14,6 +14,9 @@ public sealed class Equipment : AggregateRoot
     public bool IsActive { get; private set; } = true;
     public DateTime? LastSyncAt { get; private set; }
 
+    private readonly List<EquipmentMedia> _media = [];
+    public IReadOnlyList<EquipmentMedia> Media => _media.AsReadOnly();
+
     public static Equipment Create(
         string code,
         string description,
