@@ -21,9 +21,15 @@ public sealed class Notice : AggregateRoot
     public DateTime? SynchronizedAt { get; private set; }
     public string CreatedBy { get; private set; } = string.Empty;
     public string? ApprovedBy { get; private set; }
+    public string? RejectionReason { get; private set; }
     public string? Location { get; private set; }
     public string? Customer { get; private set; }
     public int Priority { get; private set; }
+
+    public NoticeApprovalStatus ApprovalStatus =>
+        IsApproved ? NoticeApprovalStatus.Approved :
+        RejectionReason is not null ? NoticeApprovalStatus.Rejected :
+        NoticeApprovalStatus.Pending;
 
     public IReadOnlyList<Operation> Operations => _operations;
 
@@ -73,7 +79,22 @@ public sealed class Notice : AggregateRoot
 
         IsApproved = true;
         ApprovedBy = approvedBy;
+        RejectionReason = null;
         MarkUpdated();
+        RaiseDomainEvent(new NoticeApprovalChangedDomainEvent(Id, NoticeApprovalStatus.Approved, approvedBy, null));
+        return Result.Success();
+    }
+
+    public Result Reject(string rejectedBy, string reason)
+    {
+        if (Status == NoticeStatus.Closed || Status == NoticeStatus.Cancelled)
+            return Result.Failure(Errors.Notice.CannotModifyWhenClosed);
+
+        IsApproved = false;
+        ApprovedBy = null;
+        RejectionReason = reason;
+        MarkUpdated();
+        RaiseDomainEvent(new NoticeApprovalChangedDomainEvent(Id, NoticeApprovalStatus.Rejected, rejectedBy, reason));
         return Result.Success();
     }
 

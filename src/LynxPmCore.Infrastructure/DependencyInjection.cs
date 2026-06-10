@@ -2,6 +2,7 @@ using System.Text;
 using LynxPmCore.Application.Common.Interfaces;
 using LynxPmCore.Infrastructure.Authentication;
 using LynxPmCore.Infrastructure.Caching;
+using LynxPmCore.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,7 @@ public static class DependencyInjection
     {
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         // JWT
         var jwtSection = config.GetSection(JwtOptions.SectionName);

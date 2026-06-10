@@ -1,8 +1,10 @@
 using Asp.Versioning;
 using LynxPmCore.Api.Extensions;
+using LynxPmCore.Application.Features.Notices.Commands.ApproveNotice;
 using LynxPmCore.Application.Features.Notices.Commands.ChangeNoticeStatus;
 using LynxPmCore.Application.Features.Notices.Commands.CompleteOperation;
 using LynxPmCore.Application.Features.Notices.Commands.CreateNotice;
+using LynxPmCore.Application.Features.Notices.Commands.RejectNotice;
 using LynxPmCore.Application.Features.Notices.Commands.StartOperation;
 using LynxPmCore.Application.Features.Notices.Commands.SynchronizeNotice;
 using LynxPmCore.Application.Features.Notices.Queries.GetNoticeById;
@@ -56,6 +58,20 @@ public sealed class NoticesController(ISender sender) : ControllerBase
         return result.ToActionResult(this);
     }
 
+    [HttpPost("{id:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid id, [FromBody] ApproveNoticeRequest request, CancellationToken ct)
+    {
+        var result = await sender.Send(new ApproveNoticeCommand(id, request.ApprovedBy), ct);
+        return result.ToActionResult(this);
+    }
+
+    [HttpPost("{id:guid}/reject")]
+    public async Task<IActionResult> Reject(Guid id, [FromBody] RejectNoticeRequest request, CancellationToken ct)
+    {
+        var result = await sender.Send(new RejectNoticeCommand(id, request.RejectedBy, request.Reason), ct);
+        return result.ToActionResult(this);
+    }
+
     [HttpPost("{id:guid}/sync")]
     public async Task<IActionResult> Synchronize(Guid id, CancellationToken ct)
     {
@@ -86,6 +102,8 @@ public sealed class NoticesController(ISender sender) : ControllerBase
     }
 }
 
+public sealed record ApproveNoticeRequest(string ApprovedBy);
+public sealed record RejectNoticeRequest(string RejectedBy, string Reason);
 public sealed record ChangeNoticeStatusRequest(NoticeStatus NewStatus);
 public sealed record StartOperationRequest(string? ScannedEquipmentCode);
 public sealed record CompleteOperationRequest(string? Notes, bool PhotoConfirmed = false);

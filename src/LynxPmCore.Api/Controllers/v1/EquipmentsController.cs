@@ -2,6 +2,7 @@ using Asp.Versioning;
 using LynxPmCore.Api.Extensions;
 using LynxPmCore.Application.Features.Equipments.Commands.AddEquipmentMedia;
 using LynxPmCore.Application.Features.Equipments.Commands.RemoveEquipmentMedia;
+using LynxPmCore.Application.Features.Equipments.Commands.UploadEquipmentMedia;
 using LynxPmCore.Application.Features.Equipments.Queries.GetEquipmentHistory;
 using LynxPmCore.Application.Features.Equipments.Queries.GetEquipmentMedia;
 using LynxPmCore.Application.Features.Equipments.Queries.GetEquipments;
@@ -51,6 +52,27 @@ public sealed class EquipmentsController(ISender sender) : ControllerBase
         return result.ToActionResult(this);
     }
 
+    [HttpPost("{code}/media/upload")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadMedia(string code, [FromForm] UploadMediaRequest request, CancellationToken ct)
+    {
+        if (request.File is null || request.File.Length == 0)
+            return BadRequest("No file provided.");
+
+        await using var stream = request.File.OpenReadStream();
+        var result = await sender.Send(
+            new UploadEquipmentMediaCommand(
+                code,
+                stream,
+                request.File.FileName,
+                request.File.ContentType,
+                request.MediaType,
+                request.Title,
+                request.Position), ct);
+
+        return result.ToActionResult(this);
+    }
+
     [HttpDelete("{code}/media/{id:guid}")]
     public async Task<IActionResult> RemoveMedia(string code, Guid id, CancellationToken ct)
     {
@@ -65,3 +87,11 @@ public sealed record AddEquipmentMediaRequest(
     string? ThumbnailUrl = null,
     string? Title = null,
     int Position = 0);
+
+public sealed class UploadMediaRequest
+{
+    public IFormFile? File { get; set; }
+    public string MediaType { get; set; } = "IMAGE";
+    public string? Title { get; set; }
+    public int Position { get; set; } = 0;
+}

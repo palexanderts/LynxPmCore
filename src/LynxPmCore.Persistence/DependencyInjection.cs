@@ -24,6 +24,7 @@ public static class DependencyInjection
                 o.UseOracleSQLCompatibility(OracleSQLCompatibility.DatabaseVersion21);
             }));
 
+        services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
         services.AddScoped<INoticeRepository, NoticeRepository>();
         services.AddScoped<IEquipmentRepository, EquipmentRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();

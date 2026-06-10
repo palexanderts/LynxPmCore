@@ -123,6 +123,7 @@ app.UseSwaggerUI(opts =>
     opts.DocumentTitle = $"LynxPmCore — {lynxClient.ToUpperInvariant()}";
 });
 
+app.UseStaticFiles();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
