@@ -1,0 +1,717 @@
+================================================================================
+  LYNX PM CORE — GUÍA DE INTEGRACIÓN PARA APP MAUI
+  Servidor: http://129.213.155.24/lynxpm/
+  Fecha: 2026-06-11
+================================================================================
+
+CONTENIDO
+---------
+  1. Configuración de conexión
+  2. Modo de compatibilidad ORDS (app legacy)
+  3. API REST v1 (integración nativa)
+  4. Enums de referencia
+  5. Modelos de respuesta comunes
+  6. Flujo recomendado para la app MAUI
+  7. SignalR — notificaciones en tiempo real
+
+
+================================================================================
+1. CONFIGURACIÓN DE CONEXIÓN
+================================================================================
+
+  URL BASE PRODUCCIÓN : http://129.213.155.24/lynxpm/
+  CLIENTE             : iberofama
+  AMBIENTE            : Production
+
+  En el HttpClient de MAUI, configura:
+
+    BaseAddress = "http://129.213.155.24/lynxpm/"
+    Timeout     = 30 segundos
+    Headers     = Content-Type: application/json
+
+  Para endpoints REST v1 autenticados, añade el header:
+    Authorization: Bearer <token>
+
+  El token se obtiene llamando a POST /api/v1/auth/token (ver sección 3).
+
+
+================================================================================
+2. MODO DE COMPATIBILIDAD ORDS (APP LEGACY)
+================================================================================
+
+  Todos los endpoints del modo ORDS usan el mismo patrón:
+
+    POST /Index?Service={NOMBRE_SERVICIO}
+    Content-Type: application/json
+    Body: { campos requeridos según el servicio }
+
+  La respuesta varía por servicio. Los errores retornan:
+    { "TIPO": "E", "DESCRIPCION": "mensaje de error" }
+
+  ─────────────────────────────────────────────────────
+  2.1 CONECTIVIDAD
+  ─────────────────────────────────────────────────────
+
+    Servicio : CONNECTION
+    Método   : POST /Index?Service=CONNECTION
+    Body     : {} (vacío)
+    Respuesta: { "isOk": true }
+
+    Usar al iniciar la app para verificar que el servidor está disponible.
+
+  ─────────────────────────────────────────────────────
+  2.2 LICENCIA
+  ─────────────────────────────────────────────────────
+
+    Servicio : LICENCE
+    Método   : POST /Index?Service=LICENCE
+    Body     : {} (vacío)
+    Respuesta:
+      {
+        "licence"   : "X",
+        "type"      : "U",
+        "start_date": "20260101",
+        "end_date"  : "20270101",
+        "Logueado"  : "X",
+        "undefined" : ""
+      }
+
+  ─────────────────────────────────────────────────────
+  2.3 LOGIN
+  ─────────────────────────────────────────────────────
+
+    Servicio : LOGIN
+    Método   : POST /Index?Service=LOGIN
+    Body     :
+      {
+        "Logon"      : "usuario",
+        "SellerCode" : "CODIGO",
+        "Password"   : "clave"
+      }
+    Respuesta:
+      {
+        "TIPO"       : "",
+        "DESCRIPCION": "",
+        "type"       : "U",
+        "Logon"      : "usuario",
+        "PassWord"   : "",
+        "SellerName" : "CODIGO",
+        "SellerCode" : "CODIGO",
+        "znorol"     : 1
+      }
+
+    NOTA: El login actualmente refleja los datos recibidos.
+          Para autenticación con token JWT, usar el endpoint
+          REST POST /api/v1/auth/token (sección 3.1).
+
+  ─────────────────────────────────────────────────────
+  2.4 USUARIOS
+  ─────────────────────────────────────────────────────
+
+    Servicio : GET_USERS
+    Método   : POST /Index?Service=GET_USERS
+    Body     : {} (vacío)
+    Respuesta: [] (array vacío — stub)
+
+  ─────────────────────────────────────────────────────
+  2.5 AVISOS / NOTICES
+  ─────────────────────────────────────────────────────
+
+  GET_AVISOS_CHANGES — Descargar todos los avisos del usuario
+    Body     : { "USUARIO": "codigo_usuario" }
+    Respuesta:
+      {
+        "HEADER": [
+          {
+            "AVISO"      : "numero_aviso",
+            "AVISOSAP"   : "",
+            "ORDENSAP"   : "",
+            "EQUIPO"     : "codigo_equipo",
+            "DESCRIPCION": "descripcion",
+            "FECHA"      : "YYYYMMDD",
+            "HORA"       : "HHmmss",
+            "CREADOR"    : "usuario",
+            "APROBADOR"  : "usuario",
+            "SUPERVISOR" : "usuario",
+            "UBICACION"  : "ubicacion",
+            "PRIORIDAD"  : "1",
+            "STATUS"     : 1,
+            "FECHACIERRE": "",
+            "HORACIERRE" : "",
+            "CERRADOPOR" : ""
+          }
+        ]
+      }
+
+    STATUS posibles:
+      1 = Open (Abierto)
+      2 = InProgress (En proceso)
+      3 = Paused (Pausado)
+      4 = Completed (Completado)
+      5 = Closed (Cerrado)
+      6 = Cancelled (Cancelado)
+
+  GET_AVISO / DOWN_LOAD_AVISO — Descargar un aviso específico
+    Body     : { "AVISO": "numero_aviso" }
+    Respuesta: misma estructura que GET_AVISOS_CHANGES con un solo item
+
+  GET_POOL_AVISOS — Avisos abiertos disponibles (pool)
+    Body     : {} (vacío)
+    Respuesta: misma estructura, máximo 500 avisos con STATUS=1 (Open)
+
+  SET_AVISO — Crear un nuevo aviso
+    Body     :
+      {
+        "HEADER": [
+          {
+            "AVISO"      : "numero_local",
+            "EQUIPO"     : "codigo_equipo",
+            "DESCRIPCION": "descripcion del problema",
+            "UBICACION"  : "ubicacion",
+            "CONJUNTO"   : "",
+            "CREADOR"    : "usuario",
+            "STATUS"     : "1"
+          }
+        ]
+      }
+    Respuesta:
+      [
+        {
+          "TIPO"      : "",
+          "DESCRIPCION": "",
+          "local_id"  : "numero_local",
+          "no"        : 123456,
+          "AVISOID"   : "uuid-del-aviso",
+          "ORDENID"   : "",
+          "SAPAVISOID": "",
+          "OPERATION" : "INSERT"
+        }
+      ]
+
+  STATUS_AVISO — Cambiar estado de un aviso
+    Body     : { "AVISO": "numero_aviso", "estat": "2" }
+    (estat: "1"=Open, "2"=InProgress, "3"=Paused,
+            "4"=Completed, "5"=Closed, "6"=Cancelled)
+    Respuesta: array AvisoOrdsResponse[]
+
+  CIERRE_TECNICO — Cerrar un aviso (técnico)
+    Body     : { "AVISO": "numero_aviso" }
+    Respuesta: array AvisoOrdsResponse[] con STATUS=Closed
+
+  ─────────────────────────────────────────────────────
+  2.6 EQUIPOS
+  ─────────────────────────────────────────────────────
+
+  GET_EQUIPMENT_HISTORY — Historial de mantenimiento de un equipo
+    Body     : { "equipment_code": "codigo_equipo" }
+    Respuesta:
+      [
+        {
+          "id"          : 1,
+          "aviso_id"    : "numero_aviso",
+          "description" : "descripcion",
+          "status"      : 5,
+          "created_date": "YYYYMMDD",
+          "created_time": "HHmmss",
+          "close_date"  : "YYYYMMDD",
+          "close_time"  : "HHmmss",
+          "usuario"     : "tecnico",
+          "checkby"     : "supervisor",
+          "supervisor"  : "supervisor",
+          "tipo"        : "tipo_aviso",
+          "comments"    : "comentarios",
+          "operations"  : 3,
+          "executor"    : "ejecutor"
+        }
+      ]
+
+  GET_EQUIPMENT_MEDIA — Archivos multimedia de un equipo
+    Body     : { "equipment_code": "codigo_equipo" }
+    Respuesta:
+      [
+        {
+          "id"            : "uuid",
+          "equipment_code": "codigo_equipo",
+          "media_type"    : "IMAGE",
+          "url"           : "http://servidor/archivo.jpg",
+          "thumbnail_url" : "http://servidor/thumb.jpg",
+          "title"         : "titulo",
+          "position"      : 0,
+          "created_by"    : "usuario"
+        }
+      ]
+
+  ─────────────────────────────────────────────────────
+  2.7 SERVICIOS STUB (retornan vacío — no implementados aún)
+  ─────────────────────────────────────────────────────
+
+  Los siguientes servicios existen en el endpoint pero retornan
+  datos vacíos o confirmación. Están reservados para futuras
+  implementaciones:
+
+    GET_COMPONENTES, GET_COMP_STOCK    → []
+    GET_SOL_TRASLADOS                  → []
+    GET_CENTERS, GET_ROLES, GET_ROLESPERMITS,
+    GET_TPAVISOS, GET_UBICACIONES, GET_DEPARTMENTS,
+    GET_PERSONS, GET_PRIORIDAD, GET_RAZONES, GET_CITAS → []
+
+    POST_ORDEN, GET_STATUS_ORDEN, NOTIFICAR_ORDEN,
+    SUPERVISORPERMITREQUEST, POST_COMP_CONSUMPTION,
+    POST_COMP_RECEIPT, POST_STOCK, MODIFY_COMPONENT,
+    NOTIFY_COMPONENT, POST_TRASPASOS, SET_NOTIFICAR,
+    SET_STATUS_USER, POST_CITA                         → OkOrdsResponse
+
+  ─────────────────────────────────────────────────────
+  2.8 LOGGING / ERRORES DESDE LA APP
+  ─────────────────────────────────────────────────────
+
+  SET_LOG — Enviar log informativo al servidor
+    Body     : { "log": "mensaje", "usuario": "user", "nivel": "INFO" }
+    Respuesta: { "TIPO": "", "DESCRIPCION": "" }
+
+  SEND_ERRORS — Reportar errores de la app al servidor
+    Body     : { "error": "descripcion", "stack": "..." }
+    Respuesta: { "TIPO": "", "DESCRIPCION": "" }
+
+
+================================================================================
+3. API REST v1 (INTEGRACIÓN NATIVA)
+================================================================================
+
+  URL BASE: http://129.213.155.24/lynxpm/api/v1/
+  Todos los endpoints requieren header: Authorization: Bearer <token>
+  Excepto /auth/token que es público.
+
+  ─────────────────────────────────────────────────────
+  3.1 AUTENTICACIÓN
+  ─────────────────────────────────────────────────────
+
+  Obtener token JWT
+    POST /api/v1/auth/token
+    Body : { "UserCode": "usuario", "Password": "clave" }
+    Resp : { "token": "eyJ...", "expiresIn": 3600 }
+
+    Guardar el token y enviarlo en todas las peticiones:
+      Authorization: Bearer eyJ...
+
+  ─────────────────────────────────────────────────────
+  3.2 NOTICES (AVISOS)
+  ─────────────────────────────────────────────────────
+
+  Listar avisos
+    GET /api/v1/notices?page=1&pageSize=20&status=1&equipmentCode=EQ01
+    Todos los query params son opcionales.
+    Respuesta: PagedResult<NoticeListDto> (ver sección 5)
+
+  Obtener un aviso
+    GET /api/v1/notices/{id}
+    Respuesta: NoticeDto con operaciones y media del equipo
+
+  Crear aviso
+    POST /api/v1/notices
+    Body:
+      {
+        "Number"       : "AV-001",
+        "EquipmentCode": "EQ-001",
+        "Description"  : "Falla en motor",
+        "Location"     : "Planta A",
+        "Customer"     : "cliente",
+        "Priority"     : 1
+      }
+    Respuesta: NoticeDto creado
+
+  Cambiar estado
+    PATCH /api/v1/notices/{id}/status
+    Body: { "NewStatus": 2 }
+    (valores en sección 4 — NoticeStatus)
+
+  Aprobar aviso
+    POST /api/v1/notices/{id}/approve
+    Body: { "ApprovedBy": "nombre_supervisor" }
+
+  Rechazar aviso
+    POST /api/v1/notices/{id}/reject
+    Body: { "RejectedBy": "nombre_supervisor", "Reason": "motivo" }
+
+  Sincronizar con ERP
+    POST /api/v1/notices/{id}/sync
+    Body: vacío
+    Respuesta: 200 OK / 404 Not Found / 400 Bad Request
+
+  Iniciar operación
+    POST /api/v1/notices/{noticeId}/operations/{operationId}/start
+    Body (opcional): { "ScannedEquipmentCode": "EQ-001" }
+
+  Completar operación
+    POST /api/v1/notices/{noticeId}/operations/{operationId}/complete
+    Body: { "Notes": "trabajo realizado", "PhotoConfirmed": true }
+
+  ─────────────────────────────────────────────────────
+  3.3 EQUIPOS
+  ─────────────────────────────────────────────────────
+
+  Listar equipos
+    GET /api/v1/equipments?page=1&pageSize=50&search=bomba&customer=ibero
+    Respuesta: PagedResult<EquipmentDto>
+
+  Historial de un equipo
+    GET /api/v1/equipments/{code}/history
+    Respuesta: EquipmentHistoryDto[]
+
+  Obtener media de un equipo
+    GET /api/v1/equipments/{code}/media
+    Respuesta: EquipmentMediaDto[]
+
+  Agregar media (URL externa)
+    POST /api/v1/equipments/{code}/media
+    Body:
+      {
+        "MediaType"    : "IMAGE",
+        "Url"          : "https://...",
+        "ThumbnailUrl" : "https://...",
+        "Title"        : "Foto instalación",
+        "Position"     : 0
+      }
+
+  Subir archivo multimedia
+    POST /api/v1/equipments/{code}/media/upload
+    Content-Type: multipart/form-data
+    Campos:
+      File       : archivo (IFormFile)
+      MediaType  : "IMAGE" | "VIDEO" | "DOCUMENT"
+      Title      : "descripcion" (opcional)
+      Position   : 0 (opcional)
+    Respuesta: EquipmentMediaDto con la URL del archivo subido
+
+    El archivo queda disponible en:
+      http://129.213.155.24/lynxpm/uploads/equipment/{CODE}/{guid}.ext
+
+  Eliminar media
+    DELETE /api/v1/equipments/{code}/media/{id}
+
+  ─────────────────────────────────────────────────────
+  3.4 CLIENTES
+  ─────────────────────────────────────────────────────
+
+  Listar clientes
+    GET /api/v1/customers?page=1&pageSize=50&search=ibero
+    Respuesta: PagedResult<CustomerDto>
+
+  Equipos de un cliente
+    GET /api/v1/customers/{code}/equipments
+    Respuesta: EquipmentDto[]
+
+  ─────────────────────────────────────────────────────
+  3.5 ANALYTICS / DASHBOARD
+  ─────────────────────────────────────────────────────
+
+  KPIs del dashboard
+    GET /api/v1/analytics/dashboard
+    Respuesta:
+      {
+        "notices": {
+          "total"              : 120,
+          "byStatus"           : { "1": 30, "2": 15, "4": 75 },
+          "avgResolutionHours" : 8.5,
+          "pendingApproval"    : 5
+        },
+        "equipment": {
+          "total"     : 50,
+          "topFailing": [
+            { "equipmentCode": "EQ-01", "failureCount": 12, "description": "Bomba A" }
+          ]
+        },
+        "sync": {
+          "pendingSync"    : 3,
+          "syncedLast24h"  : 10
+        }
+      }
+
+  ─────────────────────────────────────────────────────
+  3.6 SINCRONIZACIÓN ERP
+  ─────────────────────────────────────────────────────
+
+  Ver configuraciones de sync
+    GET /api/v1/erp-sync/config
+    Respuesta: ErpSyncConfigDto[]
+
+  Actualizar configuración de sync
+    PUT /api/v1/erp-sync/config/{process}
+    (process: 1=ServiceOrder, 2=HourBilling,
+              3=InventoryConsumption, 4=InventoryMovement)
+    Body:
+      {
+        "IsEnabled"          : true,
+        "ErpUrl"             : "https://erp.empresa.com/api/sync",
+        "AuthHeader"         : "Bearer token-erp",
+        "RetryMax"           : 3,
+        "RetryDelaySeconds"  : 60,
+        "Priority"           : 10
+      }
+
+  Disparar sincronización completa
+    POST /api/v1/sync/full
+    Respuesta: 202 Accepted
+
+
+================================================================================
+4. ENUMS DE REFERENCIA
+================================================================================
+
+  NoticeStatus (estado del aviso):
+    1 = Open          (Abierto)
+    2 = InProgress    (En proceso)
+    3 = Paused        (Pausado)
+    4 = Completed     (Completado)
+    5 = Closed        (Cerrado)
+    6 = Cancelled     (Cancelado)
+
+  NoticeApprovalStatus (estado de aprobación):
+    0 = Pending       (Pendiente)
+    1 = Approved      (Aprobado)
+    2 = Rejected      (Rechazado)
+
+  OperationType (tipo de operación):
+    1 = Standard      (Estándar)
+    2 = Inspection    (Inspección)
+    3 = MeasurePoint  (Punto de medición)
+    4 = Relocate      (Reubicación)
+
+  OperationStatus (estado de operación):
+    1 = Pending       (Pendiente)
+    2 = InProgress    (En proceso)
+    3 = Paused        (Pausado)
+    4 = Completed     (Completado)
+
+  ErpSyncProcess:
+    1 = ServiceOrder
+    2 = HourBilling
+    3 = InventoryConsumption
+    4 = InventoryMovement
+
+  Mapeo STATUS_AVISO (ORDS) ↔ NoticeStatus (REST):
+    "1" ↔ 1 (Open)
+    "2" ↔ 2 (InProgress)
+    "3" ↔ 3 (Paused)
+    "4" ↔ 4 (Completed)
+    "5" ↔ 5 (Closed)
+    "6" ↔ 6 (Cancelled)
+
+
+================================================================================
+5. MODELOS DE RESPUESTA COMUNES
+================================================================================
+
+  PagedResult<T>
+    {
+      "Items"          : [...],
+      "Page"           : 1,
+      "PageSize"       : 20,
+      "TotalCount"     : 150,
+      "HasNextPage"    : true,
+      "HasPreviousPage": false
+    }
+
+  NoticeListDto
+    {
+      "Id"                : "guid",
+      "Number"            : "AV-001",
+      "EquipmentCode"     : "EQ-001",
+      "Description"       : "Falla motor",
+      "Status"            : 2,
+      "StatusName"        : "InProgress",
+      "IsApproved"        : false,
+      "ApprovalStatus"    : 0,
+      "ApprovalStatusName": "Pending",
+      "IsSynchronized"    : false,
+      "Location"          : "Planta A",
+      "Customer"          : "iberofama",
+      "Priority"          : 1,
+      "CreatedAt"         : "2026-06-01T08:00:00Z"
+    }
+
+  NoticeDto (detalle completo)
+    Todos los campos de NoticeListDto más:
+    {
+      "ApprovedBy"    : null,
+      "RejectionReason": null,
+      "ApexId"        : null,
+      "CreatedBy"     : "tecnico",
+      "UpdatedAt"     : "2026-06-01T10:00:00Z",
+      "Operations"    : [OperationDto...],
+      "EquipmentMedia": [EquipmentMediaDto...]
+    }
+
+  OperationDto
+    {
+      "Id"                 : "guid",
+      "Code"               : "OP-001",
+      "Description"        : "Revisar correas",
+      "Type"               : 1,
+      "TypeName"           : "Standard",
+      "Status"             : 1,
+      "StatusName"         : "Pending",
+      "Position"           : 0,
+      "StartedAt"          : null,
+      "CompletedAt"        : null,
+      "Notes"              : null,
+      "AssignedTechnician" : "tecnico"
+    }
+
+  EquipmentDto
+    {
+      "Id"         : "guid",
+      "Code"       : "EQ-001",
+      "Description": "Bomba centrifuga",
+      "Location"   : "Planta A",
+      "Customer"   : "iberofama",
+      "ParentCode" : null,
+      "IsActive"   : true,
+      "LastSyncAt" : "2026-06-01T00:00:00Z",
+      "Media"      : [EquipmentMediaDto...]
+    }
+
+  EquipmentMediaDto
+    {
+      "Id"           : "guid",
+      "EquipmentCode": "EQ-001",
+      "MediaType"    : "IMAGE",
+      "Url"          : "http://129.213.155.24/lynxpm/uploads/equipment/EQ-001/archivo.jpg",
+      "ThumbnailUrl" : null,
+      "Title"        : "Foto instalación",
+      "Position"     : 0,
+      "CreatedBy"    : "tecnico",
+      "CreatedAt"    : "2026-06-01T00:00:00Z"
+    }
+
+  CustomerDto
+    {
+      "Id"      : "guid",
+      "Code"    : "IBERO",
+      "Name"    : "Iberofama S.A.",
+      "Address" : "Calle 1, Santo Domingo",
+      "Phone"   : "809-000-0000",
+      "IsActive": true
+    }
+
+  OkOrdsResponse (respuesta OK en modo ORDS)
+    { "TIPO": "", "DESCRIPCION": "" }
+
+  ErrorOrdsResponse (respuesta de error en modo ORDS)
+    { "TIPO": "E", "DESCRIPCION": "mensaje del error" }
+
+
+================================================================================
+6. FLUJO RECOMENDADO PARA LA APP MAUI
+================================================================================
+
+  INICIO DE SESIÓN (flujo completo)
+  ──────────────────────────────────
+  1. POST /Index?Service=CONNECTION      → verificar conectividad
+  2. POST /Index?Service=LICENCE         → validar licencia activa
+  3. POST /api/v1/auth/token             → obtener JWT (guardar token)
+  4. POST /Index?Service=LOGIN           → compatibilidad con código ORDS
+
+  SINCRONIZACIÓN INICIAL (descarga de datos)
+  ───────────────────────────────────────────
+  1. GET  /api/v1/customers              → descargar catálogo de clientes
+  2. GET  /api/v1/equipments             → descargar catálogo de equipos
+  3. GET  /api/v1/notices?status=1       → descargar avisos abiertos
+  4. GET  /api/v1/notices?status=2       → descargar avisos en proceso
+
+     Alternativa (modo legacy ORDS):
+  1. POST /Index?Service=GET_AVISOS_CHANGES  (body: USUARIO)
+
+  TRABAJAR CON UN AVISO
+  ──────────────────────
+  1. Obtener detalle:
+     GET /api/v1/notices/{id}
+  2. Cambiar estado a En Proceso:
+     PATCH /api/v1/notices/{id}/status  (body: NewStatus=2)
+  3. Iniciar operación:
+     POST /api/v1/notices/{noticeId}/operations/{operationId}/start
+  4. Completar operación:
+     POST /api/v1/notices/{noticeId}/operations/{operationId}/complete
+  5. Cerrar aviso:
+     PATCH /api/v1/notices/{id}/status  (body: NewStatus=5)
+     o POST /Index?Service=CIERRE_TECNICO  (body: AVISO)
+
+  CREAR AVISO DESDE LA APP
+  ─────────────────────────
+  1. POST /api/v1/notices                → crea el aviso (retorna id)
+  2. POST /api/v1/equipments/{code}/media/upload  → sube fotos si aplica
+  3. POST /api/v1/notices/{id}/sync      → sincronizar con ERP
+
+  SUBIR FOTO DE EVIDENCIA
+  ────────────────────────
+  1. POST /api/v1/equipments/{code}/media/upload
+     Content-Type: multipart/form-data
+     File: <bytes de la imagen>
+     MediaType: "IMAGE"
+     Title: "Evidencia reparacion"
+  2. La URL retornada en EquipmentMediaDto.Url se puede mostrar
+     directamente en la app con un WebView o Image control.
+
+  MODO OFFLINE
+  ─────────────
+  Si la app necesita funcionar offline, almacenar localmente:
+  - Respuesta de GET_AVISOS_CHANGES (avisos asignados al técnico)
+  - Respuesta de GET_EQUIPMENT_HISTORY (historial de equipos)
+  Al reconectarse, sincronizar cambios pendientes usando:
+  - STATUS_AVISO para actualizar estados
+  - SET_AVISO para avisos creados offline
+  - POST /api/v1/notices/{id}/sync para propagar al ERP
+
+
+================================================================================
+7. SIGNALR — NOTIFICACIONES EN TIEMPO REAL
+================================================================================
+
+  HUBS DISPONIBLES
+  ─────────────────
+  Notificaciones  : ws://129.213.155.24/lynxpm/hubs/notifications
+  Sincronización  : ws://129.213.155.24/lynxpm/hubs/sync
+
+  CONEXIÓN EN MAUI (.NET)
+  ────────────────────────
+  Instalar paquete: Microsoft.AspNetCore.SignalR.Client
+
+  var connection = new HubConnectionBuilder()
+      .WithUrl("http://129.213.155.24/lynxpm/hubs/notifications", opts =>
+      {
+          opts.AccessTokenProvider = () => Task.FromResult(jwtToken);
+      })
+      .WithAutomaticReconnect()
+      .Build();
+
+  await connection.StartAsync();
+
+  EVENTOS DISPONIBLES (escuchar desde la app)
+  ────────────────────────────────────────────
+  NotificationHub:
+    "NoticeStatusChanged"    → cuando un aviso cambia de estado
+    "NoticeApprovalChanged"  → cuando un aviso es aprobado/rechazado
+    "NewNotice"              → cuando se crea un aviso nuevo
+
+  SynchronizationHub:
+    "SyncCompleted"          → cuando termina una sincronización
+    "SyncFailed"             → cuando falla una sincronización
+
+  SUSCRIBIR EVENTO EJEMPLO
+  ─────────────────────────
+  connection.On<NoticeDto>("NoticeStatusChanged", notice =>
+  {
+      // Actualizar la lista local de avisos
+      MainThread.BeginInvokeOnMainThread(() =>
+      {
+          var existing = Notices.FirstOrDefault(n => n.Id == notice.Id);
+          if (existing != null)
+              existing.Status = notice.Status;
+      });
+  });
+
+
+================================================================================
+  FIN DEL DOCUMENTO
+  Para dudas o cambios contactar: pablotaveras@lemoconsulting.com
+================================================================================
