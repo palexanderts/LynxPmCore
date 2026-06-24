@@ -58,10 +58,6 @@ builder.Services.AddApiVersioning(opts =>
 
 builder.Services.AddControllers();
 
-// Sin autenticación requerida — todos los endpoints son públicos
-builder.Services.AddAuthorization(opts =>
-    opts.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-        .RequireAssertion(_ => true).Build());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opts =>
 {

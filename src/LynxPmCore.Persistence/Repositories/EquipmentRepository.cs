@@ -16,7 +16,10 @@ internal sealed class EquipmentRepository(LynxPmDbContext db) : IEquipmentReposi
         var query = db.Equipments.AsNoTracking().Where(e => e.IsActive && !e.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(e => e.Code.Contains(search) || e.Description.Contains(search));
+        {
+            var upper = search.ToUpperInvariant();
+            query = query.Where(e => e.Code.ToUpper().Contains(upper) || e.Description.ToUpper().Contains(upper));
+        }
         if (!string.IsNullOrWhiteSpace(customer))
             query = query.Where(e => e.Customer == customer);
 

@@ -63,6 +63,8 @@ internal sealed class ErpSyncConfigConfiguration : IEntityTypeConfiguration<ErpS
         builder.Property(e => e.UpdatedAt)
             .HasColumnName("UPDATED_AT");
 
+        builder.Ignore(e => e.IsDeleted);
+
         builder.HasIndex(e => new { e.ClientCode, e.Process })
             .IsUnique()
             .HasDatabaseName("UQ_ERP_SYNC_CONFIG_CLIENT_PROC");

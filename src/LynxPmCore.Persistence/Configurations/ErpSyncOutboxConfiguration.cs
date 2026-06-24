@@ -61,6 +61,8 @@ internal sealed class ErpSyncOutboxConfiguration : IEntityTypeConfiguration<ErpS
         builder.Property(e => e.UpdatedAt)
             .HasColumnName("UPDATED_AT");
 
+        builder.Ignore(e => e.IsDeleted);
+
         builder.HasIndex(e => new { e.Status, e.ScheduledAt })
             .HasDatabaseName("IX_ERP_OUTBOX_STATUS_SCHEDULED");
 

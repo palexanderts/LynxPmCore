@@ -16,7 +16,10 @@ internal sealed class CustomerRepository(LynxPmDbContext db) : ICustomerReposito
         var query = db.Customers.AsNoTracking().Where(c => c.IsActive && !c.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(c => c.Code.Contains(search) || c.Name.Contains(search));
+        {
+            var upper = search.ToUpperInvariant();
+            query = query.Where(c => c.Code.ToUpper().Contains(upper) || c.Name.ToUpper().Contains(upper));
+        }
 
         var total = await query.CountAsync(ct);
         var items = await query

@@ -56,12 +56,12 @@ public sealed class IndexController(
             // ── Avisos: escritura ─────────────────────────────────────────────
             "SET_AVISO"                => await HandleSetAviso(body, ct),
             "STATUS_AVISO"             => await HandleStatusAviso(body, ct),
-            "CIERRE_TECTNICO"          => await HandleCierreTecnico(body, ct),
+            "CIERRE_TECNICO"           => await HandleCierreTecnico(body, ct),
             "POST_INSPECTION"          => await HandleSetAviso(body, ct),
 
             // ── Órdenes de servicio ───────────────────────────────────────────
             "POST_ORDEN"               => Ok(new OkOrdsResponse()),
-            "GET_STATUS_ORDEN"         => Ok(Array.Empty<object>()),
+            "GET_STATUS_ORDEN"         => Ok(new OkOrdsResponse()),
             "NOTIFICAR_ORDEN"          => Ok(new OkOrdsResponse()),
             "SUPERVISORPERMITREQUEST"  => Ok(new OkOrdsResponse()),
 
@@ -348,25 +348,10 @@ public sealed class IndexController(
         Position:      m.Position,
         CreatedBy:     m.CreatedBy);
 
-    private static int MapStatus(NoticeStatus status) => status switch
-    {
-        NoticeStatus.Open       => 0,
-        NoticeStatus.InProgress => 3,
-        NoticeStatus.Paused     => 3,
-        NoticeStatus.Completed  => 5,
-        NoticeStatus.Closed     => 4,
-        NoticeStatus.Cancelled  => 2,
-        _                       => 0
-    };
+    private static int MapStatus(NoticeStatus status) => (int)status;
 
-    private static NoticeStatus MapStatusFromOrd(int status) => status switch
-    {
-        2 => NoticeStatus.Cancelled,
-        3 => NoticeStatus.InProgress,
-        4 => NoticeStatus.Closed,
-        5 => NoticeStatus.Completed,
-        _ => NoticeStatus.Open
-    };
+    private static NoticeStatus MapStatusFromOrd(int status) =>
+        Enum.IsDefined(typeof(NoticeStatus), status) ? (NoticeStatus)status : NoticeStatus.Open;
 
     // ── Helpers ──────────────────────────────────────────────────────────────────
 

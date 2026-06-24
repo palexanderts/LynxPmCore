@@ -9,7 +9,7 @@ internal sealed class NoticeConfiguration : IEntityTypeConfiguration<Notice>
 {
     public void Configure(EntityTypeBuilder<Notice> builder)
     {
-        builder.ToTable("LYNX_PM_AVISO");
+        builder.ToTable("LYNXCORE_AVISO");
         builder.HasKey(n => n.Id);
         builder.Property(n => n.Id).HasColumnName("ID").HasColumnType("RAW(16)");
         builder.Property(n => n.Number).HasColumnName("NOTICE_NUMBER").HasMaxLength(50).IsRequired();
