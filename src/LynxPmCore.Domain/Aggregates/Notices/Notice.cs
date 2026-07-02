@@ -24,7 +24,12 @@ public sealed class Notice : AggregateRoot
     public string? RejectionReason { get; private set; }
     public string? Location { get; private set; }
     public string? Customer { get; private set; }
+    public string? Center { get; private set; }
     public int Priority { get; private set; }
+    public string? PriorityCode { get; private set; }
+    public string? PriorityText { get; private set; }
+    public string? NoticeTypeCode { get; private set; }
+    public string? NoticeTypeText { get; private set; }
 
     public NoticeApprovalStatus ApprovalStatus =>
         IsApproved ? NoticeApprovalStatus.Approved :
@@ -40,7 +45,12 @@ public sealed class Notice : AggregateRoot
         string createdBy,
         string? location = null,
         string? customer = null,
-        int priority = 1)
+        int priority = 1,
+        string? priorityCode = null,
+        string? priorityText = null,
+        string? noticeTypeCode = null,
+        string? noticeTypeText = null,
+        string? center = null)
     {
         var notice = new Notice
         {
@@ -51,7 +61,12 @@ public sealed class Notice : AggregateRoot
             CreatedBy = createdBy,
             Location = location,
             Customer = customer,
-            Priority = priority
+            Priority = priority,
+            PriorityCode = priorityCode,
+            PriorityText = priorityText,
+            NoticeTypeCode = noticeTypeCode,
+            NoticeTypeText = noticeTypeText,
+            Center = center
         };
 
         notice.RaiseDomainEvent(new NoticeCreatedDomainEvent(notice.Id, notice.Number, notice.EquipmentCode));

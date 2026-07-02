@@ -8,34 +8,52 @@ namespace LynxPmCore.Persistence.Repositories;
 
 internal sealed class AnalyticsRepository(LynxPmDbContext db) : IAnalyticsRepository
 {
-    public async Task<NoticeKpisDto> GetNoticeKpisAsync(CancellationToken ct = default)
+    public async Task<NoticeKpisDto> GetNoticeKpisAsync(int year, int month, CancellationToken ct = default)
     {
-        var notices = await db.Notices
-            .Where(n => !n.IsDeleted)
-            .Select(n => new { n.Status, n.IsApproved, n.RejectionReason, n.CreatedAt, n.UpdatedAt })
+        var monthStart = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var monthEnd = monthStart.AddMonths(1);
+        var yearStart = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var yearEnd = yearStart.AddYears(1);
+
+        var total = await db.Notices.CountAsync(n => !n.IsDeleted, ct);
+
+        var pendingApproval = await db.Notices
+            .CountAsync(n => !n.IsDeleted && n.Status == NoticeStatus.Open, ct);
+
+        var byStatusRaw = await db.Notices
+            .Where(n => !n.IsDeleted && n.CreatedAt >= monthStart && n.CreatedAt < monthEnd)
+            .Select(n => new { n.Status })
             .ToListAsync(ct);
 
-        var byStatus = notices
-            .GroupBy(n => n.Status)
+        var byStatus = byStatusRaw
+            .GroupBy(n => (int)n.Status)
             .ToDictionary(g => g.Key.ToString(), g => g.Count());
 
-        var completed = notices
-            .Where(n => n.Status == NoticeStatus.Completed || n.Status == NoticeStatus.Closed)
-            .ToList();
+        var byMonthRaw = await db.Notices
+            .Where(n => !n.IsDeleted && n.CreatedAt >= yearStart && n.CreatedAt < yearEnd)
+            .Select(n => new { n.CreatedAt.Month })
+            .ToListAsync(ct);
 
-        var avgResolution = completed.Count > 0
-            ? completed.Average(n => (n.UpdatedAt - n.CreatedAt).TotalHours)
+        var byMonth = Enumerable.Range(1, 12).ToDictionary(m => m.ToString(), _ => 0);
+        foreach (var item in byMonthRaw)
+            byMonth[item.Month.ToString()] += 1;
+
+        var closedNotices = await db.Notices
+            .Where(n => !n.IsDeleted && (n.Status == NoticeStatus.Completed || n.Status == NoticeStatus.Closed))
+            .Select(n => new { n.CreatedAt, n.UpdatedAt })
+            .ToListAsync(ct);
+
+        var avgResolution = closedNotices.Count > 0
+            ? closedNotices.Average(n => (n.UpdatedAt - n.CreatedAt).TotalHours)
             : 0;
-
-        var pendingApproval = notices.Count(n => !n.IsApproved && n.RejectionReason == null
-            && n.Status != NoticeStatus.Cancelled && n.Status != NoticeStatus.Closed);
 
         return new NoticeKpisDto
         {
-            Total = notices.Count,
-            ByStatus = byStatus,
+            Total = total,
+            PendingApproval = pendingApproval,
             AvgResolutionHours = Math.Round(avgResolution, 1),
-            PendingApproval = pendingApproval
+            ByStatus = byStatus,
+            ByMonth = byMonth
         };
     }
 

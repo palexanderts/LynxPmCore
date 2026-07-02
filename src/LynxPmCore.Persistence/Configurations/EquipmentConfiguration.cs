@@ -15,6 +15,7 @@ internal sealed class EquipmentConfiguration : IEntityTypeConfiguration<Equipmen
         builder.Property(e => e.Description).HasColumnName("DESCRIPTION").HasMaxLength(500).IsRequired();
         builder.Property(e => e.Location).HasColumnName("LOCATION").HasMaxLength(200);
         builder.Property(e => e.Customer).HasColumnName("CUSTOMER").HasMaxLength(100);
+        builder.Property(e => e.CenterCode).HasColumnName("CENTER_CODE").HasMaxLength(50);
         builder.Property(e => e.ParentCode).HasColumnName("PARENT_CODE").HasMaxLength(50);
         builder.Property(e => e.IsActive).HasColumnName("IS_ACTIVE");
         builder.Property(e => e.LastSyncAt).HasColumnName("LAST_SYNC_AT");

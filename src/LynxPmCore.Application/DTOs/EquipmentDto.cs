@@ -7,6 +7,7 @@ public sealed class EquipmentDto
     public string Description { get; set; } = string.Empty;
     public string? Location { get; set; }
     public string? Customer { get; set; }
+    public string? CenterCode { get; set; }
     public string? ParentCode { get; set; }
     public bool IsActive { get; set; }
     public DateTime? LastSyncAt { get; set; }

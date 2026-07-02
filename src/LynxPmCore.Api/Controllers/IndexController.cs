@@ -24,6 +24,8 @@ namespace LynxPmCore.Api.Controllers;
 public sealed class IndexController(
     ISender sender,
     INoticeRepository noticeRepo,
+    IEquipmentRepository equipmentRepo,
+    IComponentCatalogRepository componentCatalogRepo,
     IUnitOfWork unitOfWork,
     ILogger<IndexController> logger) : ControllerBase
 {
@@ -36,6 +38,8 @@ public sealed class IndexController(
         return service?.ToUpperInvariant() switch
         {
             // ── Equipment ──────────────────────────────────────────────────────
+            "GET_EQUIPOS"              => await HandleGetEquipos(body, ct),
+            "SET_EQUIPO"               => await HandleSetEquipo(body, ct),
             "GET_EQUIPMENT_HISTORY"    => await HandleEquipmentHistory(body, ct),
             "GET_EQUIPMENT_MEDIA"      => await HandleEquipmentMedia(body, ct),
 
@@ -66,7 +70,7 @@ public sealed class IndexController(
             "SUPERVISORPERMITREQUEST"  => Ok(new OkOrdsResponse()),
 
             // ── Componentes / Inventario ──────────────────────────────────────
-            "GET_COMPONENTES"          => Ok(Array.Empty<object>()),
+            "GET_COMPONENTES"          => await HandleGetComponentes(ct),
             "GET_COMP_STOCK"           => Ok(Array.Empty<object>()),
             "POST_COMP_CONSUMPTION"    => Ok(new OkOrdsResponse()),
             "POST_COMP_RECEIPT"        => Ok(new OkOrdsResponse()),
@@ -84,15 +88,15 @@ public sealed class IndexController(
             "SEND_ERRORS"              => HandleSendErrors(body),
 
             // ── Catálogos ──────────────────────────────────────────────────────
-            "GET_CENTERS"              => Ok(Array.Empty<object>()),
-            "GET_ROLES"                => Ok(Array.Empty<object>()),
-            "GET_ROLESPERMITS"         => Ok(Array.Empty<object>()),
-            "GET_TPAVISOS"             => Ok(Array.Empty<object>()),
-            "GET_UBICACIONES"          => Ok(Array.Empty<object>()),
-            "GET_DEPARTMENTS"          => Ok(Array.Empty<object>()),
-            "GET_PERSONS"              => Ok(Array.Empty<object>()),
-            "GET_PRIORIDAD"            => Ok(Array.Empty<object>()),
-            "GET_RAZONES"              => Ok(Array.Empty<object>()),
+            "GET_CENTERS"              => Ok(CatalogSeeds.Centers),
+            "GET_ROLES"                => Ok(CatalogSeeds.Roles),
+            "GET_ROLESPERMITS"         => Ok(CatalogSeeds.RolePermits),
+            "GET_TPAVISOS"             => Ok(CatalogSeeds.NoticeTypes),
+            "GET_UBICACIONES"          => Ok(CatalogSeeds.Locations),
+            "GET_DEPARTMENTS"          => Ok(CatalogSeeds.Departments),
+            "GET_PERSONS"              => Ok(CatalogSeeds.Persons),
+            "GET_PRIORIDAD"            => Ok(CatalogSeeds.Priorities),
+            "GET_RAZONES"              => Ok(CatalogSeeds.Reasons),
 
             // ── Citas ──────────────────────────────────────────────────────────
             "GET_CITAS"                => Ok(Array.Empty<object>()),
@@ -263,6 +267,74 @@ public sealed class IndexController(
     }
 
     // ── Equipment handlers ───────────────────────────────────────────────────────
+
+    private async Task<IActionResult> HandleGetEquipos(JsonElement? body, CancellationToken ct)
+    {
+        var (items, _) = await equipmentRepo.GetPagedAsync(1, 1000, ct: ct);
+        return Ok(items.Select(e => new EquipmentOrdsResponse(
+            Equipo:      e.Code,
+            Eqktx:       e.Description,
+            Tplnr:       e.Location ?? "",
+            Swerk:       e.Customer ?? "",
+            EquipoPadre: e.ParentCode ?? "",
+            IsActive:    e.IsActive ? "X" : ""
+        )).ToArray());
+    }
+
+    private async Task<IActionResult> HandleGetComponentes(CancellationToken ct)
+    {
+        var stock = await componentCatalogRepo.GetAllStockAsync(ct);
+        var units = await componentCatalogRepo.GetAllUnitsAsync(ct);
+        var masters = await componentCatalogRepo.GetAllMastersAsync(ct);
+
+        var unitByCode = units
+            .Where(u => !string.IsNullOrWhiteSpace(u.ComponentCode))
+            .GroupBy(u => u.ComponentCode!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Unit, StringComparer.OrdinalIgnoreCase);
+
+        var descriptionByCode = masters
+            .Where(m => !string.IsNullOrWhiteSpace(m.Code) && !string.IsNullOrWhiteSpace(m.Name))
+            .GroupBy(m => m.Code!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Name!, StringComparer.OrdinalIgnoreCase);
+
+        var items = stock
+            .Where(s => !string.IsNullOrWhiteSpace(s.ComponentCode))
+            .GroupBy(s => s.ComponentCode, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new ComponentOrdsResponse(
+                Matnr: g.Key,
+                Maktx: descriptionByCode.GetValueOrDefault(g.Key, g.Key),
+                Mstae: "A",
+                Meinh: unitByCode.GetValueOrDefault(g.Key) ?? "UN",
+                Labst: g.Sum(s => s.Quantity).ToString()
+            ))
+            .OrderBy(c => c.Matnr)
+            .ToArray();
+
+        return Ok(items);
+    }
+
+    private async Task<IActionResult> HandleSetEquipo(JsonElement? body, CancellationToken ct)
+    {
+        if (body is null || body.Value.ValueKind != JsonValueKind.Array)
+            return BadRequest(new ErrorOrdsResponse("Array of equipment objects is required"));
+
+        foreach (var item in body.Value.EnumerateArray())
+        {
+            var code        = GetStringFromEl(item, "EQUIPO") ?? GetStringFromEl(item, "equipo");
+            var description = GetStringFromEl(item, "EQKTX")  ?? GetStringFromEl(item, "eqktx") ?? "";
+            if (string.IsNullOrWhiteSpace(code)) continue;
+
+            var location   = GetStringFromEl(item, "TPLNR")       ?? GetStringFromEl(item, "tplnr");
+            var customer   = GetStringFromEl(item, "SWERK")        ?? GetStringFromEl(item, "swerk");
+            var parentCode = GetStringFromEl(item, "EQUIPO_PADRE") ?? GetStringFromEl(item, "equipo_padre");
+
+            var equipment = Domain.Aggregates.Equipments.Equipment.Create(code, description, location, customer, parentCode);
+            await equipmentRepo.UpsertAsync(equipment, ct);
+        }
+
+        await unitOfWork.SaveChangesAsync(ct);
+        return Ok(new OkOrdsResponse());
+    }
 
     private async Task<IActionResult> HandleEquipmentHistory(JsonElement? body, CancellationToken ct)
     {
@@ -465,3 +537,87 @@ public sealed record EquipmentMediaOrdsResponse(
     [property: JsonPropertyName("title")]          string? Title,
     [property: JsonPropertyName("position")]       int     Position,
     [property: JsonPropertyName("created_by")]     string? CreatedBy);
+
+public sealed record EquipmentOrdsResponse(
+    [property: JsonPropertyName("EQUIPO")]       string Equipo,
+    [property: JsonPropertyName("EQKTX")]        string Eqktx,
+    [property: JsonPropertyName("TPLNR")]        string Tplnr,
+    [property: JsonPropertyName("SWERK")]        string Swerk,
+    [property: JsonPropertyName("EQUIPO_PADRE")] string EquipoPadre,
+    [property: JsonPropertyName("ACTIVO")]       string IsActive);
+
+public sealed record ComponentOrdsResponse(
+    [property: JsonPropertyName("MATNR")] string Matnr,
+    [property: JsonPropertyName("MAKTX")] string Maktx,
+    [property: JsonPropertyName("MSTAE")] string Mstae,
+    [property: JsonPropertyName("MEINH")] string Meinh,
+    [property: JsonPropertyName("LABST")] string Labst);
+
+// Datos de catálogo de prueba — reemplazar con consultas a DB cuando se creen las tablas.
+internal static class CatalogSeeds
+{
+    public static readonly object[] Persons =
+    [
+        new { PERNR = "10001", USRID = "admin",  FIRSTNAME = "Administrador", LASTNAME = "Sistema" },
+        new { PERNR = "10002", USRID = "lmota",  FIRSTNAME = "Luis",          LASTNAME = "Mota"    },
+        new { PERNR = "10003", USRID = "tecnico",FIRSTNAME = "Técnico",       LASTNAME = "Prueba"  }
+    ];
+
+    public static readonly object[] Locations =
+    [
+        new { TPLNR = "PLANTA-01", PLTXT = "Planta Principal",  WERKS = "0001" },
+        new { TPLNR = "PLANTA-02", PLTXT = "Planta Secundaria", WERKS = "0001" },
+        new { TPLNR = "ALMACEN-01",PLTXT = "Almacén Central",   WERKS = "0001" }
+    ];
+
+    public static readonly object[] Roles =
+    [
+        new { ROLLE = "TECH",  ROLETX = "Técnico de Mantenimiento" },
+        new { ROLLE = "SUPER", ROLETX = "Supervisor"               },
+        new { ROLLE = "ADMIN", ROLETX = "Administrador"            }
+    ];
+
+    public static readonly object[] RolePermits =
+    [
+        new { ROLLE = "TECH",  PERMIT = "PM_EXECUTE", PERMITTX = "Ejecutar Órdenes"   },
+        new { ROLLE = "SUPER", PERMIT = "PM_APPROVE", PERMITTX = "Aprobar Avisos"      },
+        new { ROLLE = "ADMIN", PERMIT = "PM_ALL",     PERMITTX = "Acceso Completo"     }
+    ];
+
+    public static readonly object[] Reasons =
+    [
+        new { CODE = "001", TEXT = "Falla mecánica"      },
+        new { CODE = "002", TEXT = "Falla eléctrica"     },
+        new { CODE = "003", TEXT = "Mantenimiento preventivo" },
+        new { CODE = "004", TEXT = "Desgaste normal"     }
+    ];
+
+    public static readonly object[] Centers =
+    [
+        new { WERKS = "0001", NAME1 = "Centro Principal",    BWKEY = "0001" },
+        new { WERKS = "0002", NAME1 = "Centro Secundario",   BWKEY = "0002" }
+    ];
+
+    public static readonly object[] NoticeTypes =
+    [
+        new { QMART = "Z1", QMARTX = "Aviso de Mantenimiento Correctivo"  },
+        new { QMART = "Z2", QMARTX = "Aviso de Mantenimiento Preventivo"  },
+        new { QMART = "Z3", QMARTX = "Aviso de Inspección"                }
+    ];
+
+    public static readonly object[] Priorities =
+    [
+        new { PRIOK = "1", PRIOKX = "Alta"   },
+        new { PRIOK = "2", PRIOKX = "Media"  },
+        new { PRIOK = "3", PRIOKX = "Baja"   },
+        new { PRIOK = "4", PRIOKX = "Muy Baja" }
+    ];
+
+    public static readonly object[] Departments =
+    [
+        new { BTRTL = "MANT",  BTEXT = "Mantenimiento"     },
+        new { BTRTL = "PROD",  BTEXT = "Producción"        },
+        new { BTRTL = "LOGIS", BTEXT = "Logística"         }
+    ];
+
+}

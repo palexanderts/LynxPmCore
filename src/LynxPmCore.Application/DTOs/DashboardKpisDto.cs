@@ -10,9 +10,10 @@ public sealed class DashboardKpisDto
 public sealed class NoticeKpisDto
 {
     public int Total { get; set; }
-    public Dictionary<string, int> ByStatus { get; set; } = [];
-    public double AvgResolutionHours { get; set; }
     public int PendingApproval { get; set; }
+    public double AvgResolutionHours { get; set; }
+    public Dictionary<string, int> ByStatus { get; set; } = [];
+    public Dictionary<string, int> ByMonth { get; set; } = [];
 }
 
 public sealed class EquipmentKpisDto

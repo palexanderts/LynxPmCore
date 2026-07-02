@@ -1,3 +1,4 @@
+using LynxPmCore.Domain.Aggregates.Components;
 using LynxPmCore.Domain.Aggregates.Customers;
 using LynxPmCore.Domain.Aggregates.Equipments;
 using LynxPmCore.Domain.Aggregates.ErpSync;
@@ -19,6 +20,11 @@ public sealed class LynxPmDbContext(DbContextOptions<LynxPmDbContext> options) :
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ErpSyncConfig> ErpSyncConfigs => Set<ErpSyncConfig>();
     public DbSet<ErpSyncOutboxEntry> ErpSyncOutbox => Set<ErpSyncOutboxEntry>();
+    public DbSet<ComponentReceipt> ComponentReceipts => Set<ComponentReceipt>();
+    public DbSet<ComponentStockLocation> ComponentStockLocations => Set<ComponentStockLocation>();
+    public DbSet<ComponentUnit> ComponentUnits => Set<ComponentUnit>();
+    public DbSet<ComponentMaster> ComponentMasters => Set<ComponentMaster>();
+    public DbSet<ComponentNotification> ComponentNotifications => Set<ComponentNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

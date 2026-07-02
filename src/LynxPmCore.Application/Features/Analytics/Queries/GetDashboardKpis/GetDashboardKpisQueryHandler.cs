@@ -10,7 +10,7 @@ internal sealed class GetDashboardKpisQueryHandler(
 {
     public async Task<Result<DashboardKpisDto>> Handle(GetDashboardKpisQuery request, CancellationToken ct)
     {
-        var noticesTask = analyticsRepository.GetNoticeKpisAsync(ct);
+        var noticesTask = analyticsRepository.GetNoticeKpisAsync(request.Year, request.Month, ct);
         var equipmentTask = analyticsRepository.GetEquipmentKpisAsync(ct);
         var syncTask = analyticsRepository.GetSyncKpisAsync(ct);
 

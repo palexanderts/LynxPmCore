@@ -20,7 +20,12 @@ public sealed class NoticeDto
     public string CreatedBy { get; set; } = string.Empty;
     public string? Location { get; set; }
     public string? Customer { get; set; }
+    public string? Center { get; set; }
     public int Priority { get; set; }
+    public string? PriorityCode { get; set; }
+    public string? PriorityText { get; set; }
+    public string? NoticeTypeCode { get; set; }
+    public string? NoticeTypeText { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<OperationDto> Operations { get; set; } = [];

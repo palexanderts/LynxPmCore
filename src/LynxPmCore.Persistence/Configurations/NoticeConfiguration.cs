@@ -26,7 +26,12 @@ internal sealed class NoticeConfiguration : IEntityTypeConfiguration<Notice>
         builder.Property(n => n.CreatedBy).HasColumnName("CREATED_BY").HasMaxLength(100).IsRequired();
         builder.Property(n => n.Location).HasColumnName("LOCATION").HasMaxLength(200);
         builder.Property(n => n.Customer).HasColumnName("CUSTOMER").HasMaxLength(100);
+        builder.Property(n => n.Center).HasColumnName("CENTER").HasMaxLength(50);
         builder.Property(n => n.Priority).HasColumnName("PRIORITY");
+        builder.Property(n => n.PriorityCode).HasColumnName("PRIORITY_CODE").HasMaxLength(10);
+        builder.Property(n => n.PriorityText).HasColumnName("PRIORITY_TEXT").HasMaxLength(100);
+        builder.Property(n => n.NoticeTypeCode).HasColumnName("NOTICE_TYPE_CODE").HasMaxLength(10);
+        builder.Property(n => n.NoticeTypeText).HasColumnName("NOTICE_TYPE_TEXT").HasMaxLength(100);
         builder.Property(n => n.CreatedAt).HasColumnName("CREATED_AT");
         builder.Property(n => n.UpdatedAt).HasColumnName("UPDATED_AT");
         builder.Property(n => n.IsDeleted).HasColumnName("IS_DELETED");

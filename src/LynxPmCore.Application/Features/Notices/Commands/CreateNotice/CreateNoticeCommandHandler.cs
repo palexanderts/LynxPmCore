@@ -28,7 +28,12 @@ internal sealed class CreateNoticeCommandHandler(
             currentUser.UserCode ?? "SYSTEM",
             request.Location,
             request.Customer,
-            request.Priority);
+            request.Priority,
+            request.PriorityCode,
+            request.PriorityText,
+            request.NoticeTypeCode,
+            request.NoticeTypeText,
+            request.Center);
 
         if (noticeResult.IsFailure)
             return Result.Failure<NoticeDto>(noticeResult.Error);

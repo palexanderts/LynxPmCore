@@ -8,9 +8,9 @@ namespace LynxPmCore.Api.Controllers.v1;
 
 [ApiController]
 [ApiVersion(1)]
-[Route("api/v{version:apiVersion}/analytics")]
+[Route("api/v{version:apiVersion}/kpi")]
 [Authorize]
-public sealed class AnalyticsController(ISender sender) : ControllerBase
+public sealed class KpiController(ISender sender) : ControllerBase
 {
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard(
