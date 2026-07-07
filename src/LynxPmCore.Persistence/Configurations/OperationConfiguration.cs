@@ -10,7 +10,7 @@ internal sealed class OperationConfiguration : IEntityTypeConfiguration<Operatio
     {
         builder.ToTable("LYNXCORE_OPERATIONS");
         builder.HasKey(o => o.Id);
-        builder.Property(o => o.Id).HasColumnName("ID").HasColumnType("RAW(16)");
+        builder.Property(o => o.Id).HasColumnName("ID").HasColumnType("RAW(16)").ValueGeneratedNever();
         builder.Property(o => o.NoticeId).HasColumnName("NOTICE_ID").HasColumnType("RAW(16)").IsRequired();
         builder.Property(o => o.Code).HasColumnName("CODE").HasMaxLength(50).IsRequired();
         builder.Property(o => o.Description).HasColumnName("DESCRIPTION").HasMaxLength(500).IsRequired();
@@ -23,10 +23,18 @@ internal sealed class OperationConfiguration : IEntityTypeConfiguration<Operatio
         builder.Property(o => o.ScannedEquipmentCode).HasColumnName("SCANNED_EQUIPMENT_CODE").HasMaxLength(50);
         builder.Property(o => o.PhotoConfirmed).HasColumnName("PHOTO_CONFIRMED");
         builder.Property(o => o.AssignedTechnician).HasColumnName("ASSIGNED_TECHNICIAN").HasMaxLength(100);
+        builder.Property(o => o.Failure).HasColumnName("FAILURE").HasMaxLength(1000);
+        builder.Property(o => o.LegacySourceId).HasColumnName("LEGACY_SOURCE_ID").HasMaxLength(50);
         builder.Property(o => o.CreatedAt).HasColumnName("CREATED_AT");
         builder.Property(o => o.UpdatedAt).HasColumnName("UPDATED_AT");
         builder.Property(o => o.IsDeleted).HasColumnName("IS_DELETED");
 
         builder.HasIndex(o => o.NoticeId);
+
+        builder.HasMany(o => o.Causes)
+            .WithOne()
+            .HasForeignKey(c => c.OperationId);
+        builder.Navigation(o => o.Causes)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

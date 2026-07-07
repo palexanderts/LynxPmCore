@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddSingleton<OutboxProcessorJob>();
         services.AddSingleton<NoticeSynchronizationJob>();
         services.AddSingleton<ErpSynchronizationJob>();
+        services.AddSingleton<LegacyAvisoSyncJob>();
 
         return services;
     }
@@ -43,5 +44,10 @@ public static class DependencyInjection
             "erp-sync",
             job => job.ExecuteAsync(),
             "*/2 * * * *");
+
+        RecurringJob.AddOrUpdate<LegacyAvisoSyncJob>(
+            "legacy-aviso-sync",
+            job => job.ExecuteAsync(),
+            "*/10 * * * *");
     }
 }

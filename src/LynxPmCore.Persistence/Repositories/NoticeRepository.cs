@@ -15,6 +15,10 @@ internal sealed class NoticeRepository(LynxPmDbContext db) : INoticeRepository
         => await db.Notices.Include("Operations")
             .FirstOrDefaultAsync(n => n.Number == number.ToUpperInvariant() && !n.IsDeleted, ct);
 
+    public async Task<Notice?> GetByApexIdAsync(string apexId, CancellationToken ct = default)
+        => await db.Notices.Include("Operations")
+            .FirstOrDefaultAsync(n => n.ApexId == apexId && !n.IsDeleted, ct);
+
     public async Task<(IReadOnlyList<Notice> Items, int TotalCount)> GetPagedAsync(
         int page, int pageSize, NoticeStatus? status, string? equipmentCode, string? createdBy, CancellationToken ct = default)
     {
@@ -44,7 +48,14 @@ internal sealed class NoticeRepository(LynxPmDbContext db) : INoticeRepository
 
     public Task UpdateAsync(Notice notice, CancellationToken ct = default)
     {
-        db.Notices.Update(notice);
+        // notice llega siempre trackeado (viene de un Get* en el mismo DbContext), por lo que
+        // EF ya detecta los cambios de escalares e hijos nuevos/modificados vía DetectChanges.
+        // Llamar a Update() aquí forzaría TODO el grafo a Modified, incluyendo hijos recién
+        // agregados en memoria (aún no existen en la tabla) -> UPDATE en vez de INSERT ->
+        // DbUpdateConcurrencyException ("0 rows affected").
+        if (db.Entry(notice).State == EntityState.Detached)
+            db.Notices.Update(notice);
+
         return Task.CompletedTask;
     }
 }

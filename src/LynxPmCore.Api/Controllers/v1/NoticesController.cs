@@ -97,7 +97,14 @@ public sealed class NoticesController(ISender sender) : ControllerBase
         CancellationToken ct)
     {
         var result = await sender.Send(
-            new CompleteOperationCommand(noticeId, operationId, request.Notes, request.PhotoConfirmed), ct);
+            new CompleteOperationCommand(
+                noticeId,
+                operationId,
+                request.Notes,
+                request.PhotoConfirmed,
+                request.Failure,
+                request.Causes?.Select(c => new CompleteOperationCauseInput(c.Code, c.Text)).ToList()),
+            ct);
         return result.ToActionResult(this);
     }
 }
@@ -106,4 +113,9 @@ public sealed record ApproveNoticeRequest(string ApprovedBy);
 public sealed record RejectNoticeRequest(string RejectedBy, string Reason);
 public sealed record ChangeNoticeStatusRequest(NoticeStatus NewStatus);
 public sealed record StartOperationRequest(string? ScannedEquipmentCode);
-public sealed record CompleteOperationRequest(string? Notes, bool PhotoConfirmed = false);
+public sealed record CompleteOperationRequest(
+    string? Notes,
+    bool PhotoConfirmed = false,
+    string? Failure = null,
+    IReadOnlyList<CompleteOperationCauseRequest>? Causes = null);
+public sealed record CompleteOperationCauseRequest(string Code, string? Text);

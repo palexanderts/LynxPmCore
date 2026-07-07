@@ -18,7 +18,11 @@ internal sealed class CompleteOperationCommandHandler(
         var operation = notice.Operations.FirstOrDefault(o => o.Id == request.OperationId);
         if (operation is null) return Result.Failure(DomainErrors.Operation.NotFound);
 
-        var result = operation.Complete(request.Notes, request.PhotoConfirmed);
+        var result = operation.Complete(
+            request.Notes,
+            request.PhotoConfirmed,
+            request.Failure,
+            request.Causes?.Select(c => (c.Code, c.Text)).ToList());
         if (result.IsFailure) return result;
 
         await noticeRepository.UpdateAsync(notice, ct);
