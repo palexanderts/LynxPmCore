@@ -3,4 +3,4 @@ using LynxPmCore.Shared.Abstractions;
 
 namespace LynxPmCore.Application.Features.Notices.Commands.ChangeNoticeStatus;
 
-public sealed record ChangeNoticeStatusCommand(Guid NoticeId, NoticeStatus NewStatus) : ICommand, ITransactional;
+public sealed record ChangeNoticeStatusCommand(int NoticeId, NoticeStatus NewStatus) : ICommand, ITransactional;

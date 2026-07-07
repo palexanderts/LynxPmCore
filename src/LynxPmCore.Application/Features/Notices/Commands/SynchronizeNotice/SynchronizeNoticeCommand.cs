@@ -2,4 +2,4 @@ using LynxPmCore.Shared.Abstractions;
 
 namespace LynxPmCore.Application.Features.Notices.Commands.SynchronizeNotice;
 
-public sealed record SynchronizeNoticeCommand(Guid NoticeId) : ICommand, ITransactional;
+public sealed record SynchronizeNoticeCommand(int NoticeId) : ICommand, ITransactional;

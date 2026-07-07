@@ -1,13 +1,14 @@
 namespace LynxPmCore.Domain.Primitives;
 
-public abstract class BaseEntity : IHasDomainEvents
+// Contraparte de BaseEntity para agregados cuyo Id lo genera Oracle (trigger + sequence)
+// en vez de asignarse en el cliente, como Notice/Operation al apuntar directo a las
+// tablas legacy LYNX_PM_AVISO*. No se toca BaseEntity porque el resto del dominio
+// (Customer, Equipment, ComponentReceipt, etc.) sigue usando Guid.
+public abstract class IntEntity : IHasDomainEvents
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
-    protected BaseEntity() { }
-    protected BaseEntity(Guid id) => Id = id;
-
-    public Guid Id { get; protected set; } = Guid.NewGuid();
+    public int Id { get; protected set; }
     public DateTime CreatedAt { get; protected set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; protected set; } = DateTime.UtcNow;
     public bool IsDeleted { get; protected set; }

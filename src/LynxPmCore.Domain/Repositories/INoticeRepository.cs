@@ -5,9 +5,8 @@ namespace LynxPmCore.Domain.Repositories;
 
 public interface INoticeRepository
 {
-    Task<Notice?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<Notice?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<Notice?> GetByNumberAsync(string number, CancellationToken ct = default);
-    Task<Notice?> GetByApexIdAsync(string apexId, CancellationToken ct = default);
     Task<(IReadOnlyList<Notice> Items, int TotalCount)> GetPagedAsync(
         int page, int pageSize,
         NoticeStatus? status = null,

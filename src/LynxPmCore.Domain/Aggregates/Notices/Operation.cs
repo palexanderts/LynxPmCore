@@ -5,12 +5,11 @@ using LynxPmCore.Shared.Common;
 
 namespace LynxPmCore.Domain.Aggregates.Notices;
 
-public sealed class Operation : BaseEntity
+public sealed class Operation : IntEntity
 {
-    private readonly List<OperationCause> _causes = [];
     private Operation() { }
 
-    public Guid NoticeId { get; private set; }
+    public int NoticeId { get; private set; }
     public string Code { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
     public OperationType Type { get; private set; }
@@ -26,15 +25,8 @@ public sealed class Operation : BaseEntity
     // Falla: la registra el técnico al completar la operación (diagnóstico).
     public string? Failure { get; private set; }
 
-    // Causa(s): un aviso puede acumular varias causas a través de sus operaciones.
-    public IReadOnlyList<OperationCause> Causes => _causes;
-
-    // ID de la fila origen en LYNX_PM_AVISO_OPERATIONS (sistema legacy) cuando esta
-    // operación fue importada por el job de sincronización — null si se creó nativamente.
-    public string? LegacySourceId { get; private set; }
-
     public static Operation Create(
-        Guid noticeId,
+        int noticeId,
         string code,
         string description,
         OperationType type,
@@ -50,36 +42,6 @@ public sealed class Operation : BaseEntity
             Position = position,
             Status = OperationStatus.Pending,
             AssignedTechnician = assignedTechnician
-        };
-    }
-
-    // Import histórico desde el sistema legacy (LYNX_PM_AVISO_OPERATIONS): a diferencia de
-    // Create(), el estado inicial ya se conoce (puede llegar Completed/InProgress con fechas
-    // reales) — no se debe replayear vía Start()/Complete() porque esos disparan domain events
-    // de negocio que no aplican a un import de datos históricos.
-    public static Operation CreateFromLegacyImport(
-        Guid noticeId,
-        string code,
-        string description,
-        OperationStatus status,
-        int position,
-        DateTime? startedAt,
-        DateTime? completedAt,
-        string? assignedTechnician,
-        string legacySourceId)
-    {
-        return new Operation
-        {
-            NoticeId = noticeId,
-            Code = code,
-            Description = description,
-            Type = OperationType.Standard,
-            Status = status,
-            Position = position,
-            StartedAt = startedAt,
-            CompletedAt = completedAt,
-            AssignedTechnician = assignedTechnician,
-            LegacySourceId = legacySourceId
         };
     }
 
@@ -117,8 +79,7 @@ public sealed class Operation : BaseEntity
     public Result Complete(
         string? notes,
         bool photoConfirmed = false,
-        string? failure = null,
-        IReadOnlyList<(string Code, string? Text)>? causes = null)
+        string? failure = null)
     {
         if (Status == OperationStatus.Completed)
             return Result.Failure(DomainErrors.Operation.AlreadyCompleted);
@@ -131,14 +92,6 @@ public sealed class Operation : BaseEntity
         Notes = notes;
         PhotoConfirmed = photoConfirmed;
         Failure = failure;
-
-        if (causes is not null)
-        {
-            foreach (var cause in causes)
-            {
-                _causes.Add(OperationCause.Create(Id, cause.Code, cause.Text));
-            }
-        }
 
         MarkUpdated();
 

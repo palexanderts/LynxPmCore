@@ -8,16 +8,32 @@ namespace LynxPmCore.Persistence.Repositories;
 
 internal sealed class NoticeRepository(LynxPmDbContext db) : INoticeRepository
 {
-    public async Task<Notice?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => await db.Notices.Include("Operations").FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted, ct);
+    public async Task<Notice?> GetByIdAsync(int id, CancellationToken ct = default)
+    {
+        var notice = await db.Notices.Include("Causes").FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted, ct);
+        if (notice is not null)
+            notice.HydrateOperations(await GetOperationsAsync(notice.Id, ct));
+        return notice;
+    }
 
     public async Task<Notice?> GetByNumberAsync(string number, CancellationToken ct = default)
-        => await db.Notices.Include("Operations")
+    {
+        var notice = await db.Notices.Include("Causes")
             .FirstOrDefaultAsync(n => n.Number == number.ToUpperInvariant() && !n.IsDeleted, ct);
+        if (notice is not null)
+            notice.HydrateOperations(await GetOperationsAsync(notice.Id, ct));
+        return notice;
+    }
 
-    public async Task<Notice?> GetByApexIdAsync(string apexId, CancellationToken ct = default)
-        => await db.Notices.Include("Operations")
-            .FirstOrDefaultAsync(n => n.ApexId == apexId && !n.IsDeleted, ct);
+    // AVISOID en LYNX_PM_AVISO_OPERATIONS es VARCHAR2 sin FK real y con valores
+    // históricos inconsistentes (no siempre numéricos) — comparar columna=parámetro
+    // aquí es seguro (Oracle nunca necesita convertir la columna); un Include() vía
+    // join sí forzaría convertir toda la columna y truena con esas filas viejas.
+    private async Task<List<Operation>> GetOperationsAsync(int noticeId, CancellationToken ct)
+        => await db.Set<Operation>()
+            .Where(o => o.NoticeId == noticeId && !o.IsDeleted)
+            .OrderBy(o => o.Position)
+            .ToListAsync(ct);
 
     public async Task<(IReadOnlyList<Notice> Items, int TotalCount)> GetPagedAsync(
         int page, int pageSize, NoticeStatus? status, string? equipmentCode, string? createdBy, CancellationToken ct = default)
@@ -39,9 +55,16 @@ internal sealed class NoticeRepository(LynxPmDbContext db) : INoticeRepository
     }
 
     public async Task<IReadOnlyList<Notice>> GetNotSynchronizedAsync(CancellationToken ct = default)
-        => await db.Notices.Include("Operations")
+    {
+        var notices = await db.Notices
             .Where(n => !n.IsSynchronized && !n.IsDeleted)
             .ToListAsync(ct);
+
+        foreach (var notice in notices)
+            notice.HydrateOperations(await GetOperationsAsync(notice.Id, ct));
+
+        return notices;
+    }
 
     public async Task AddAsync(Notice notice, CancellationToken ct = default)
         => await db.Notices.AddAsync(notice, ct);

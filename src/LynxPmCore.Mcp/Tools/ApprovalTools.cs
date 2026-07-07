@@ -13,7 +13,7 @@ public sealed class ApprovalTools(ISender sender)
     [McpServerTool]
     [Description("Approve a maintenance notice. Records who approved it and notifies connected clients via SignalR.")]
     public async Task<string> approve_notice(
-        [Description("Notice ID (GUID)")] Guid noticeId,
+        [Description("Notice ID")] int noticeId,
         [Description("Name or code of the person approving")] string approvedBy,
         CancellationToken ct = default)
     {
@@ -26,7 +26,7 @@ public sealed class ApprovalTools(ISender sender)
     [McpServerTool]
     [Description("Reject a maintenance notice with a reason. Records who rejected it and notifies connected clients.")]
     public async Task<string> reject_notice(
-        [Description("Notice ID (GUID)")] Guid noticeId,
+        [Description("Notice ID")] int noticeId,
         [Description("Name or code of the person rejecting")] string rejectedBy,
         [Description("Reason for rejection")] string reason,
         CancellationToken ct = default)

@@ -35,8 +35,8 @@ public sealed class NoticesController(ISender sender) : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var result = await sender.Send(new GetNoticeByIdQuery(id), ct);
         return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
@@ -51,37 +51,37 @@ public sealed class NoticesController(ISender sender) : ControllerBase
             : BadRequest(result.Error);
     }
 
-    [HttpPatch("{id:guid}/status")]
-    public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangeNoticeStatusRequest request, CancellationToken ct)
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> ChangeStatus(int id, [FromBody] ChangeNoticeStatusRequest request, CancellationToken ct)
     {
         var result = await sender.Send(new ChangeNoticeStatusCommand(id, request.NewStatus), ct);
         return result.ToActionResult(this);
     }
 
-    [HttpPost("{id:guid}/approve")]
-    public async Task<IActionResult> Approve(Guid id, [FromBody] ApproveNoticeRequest request, CancellationToken ct)
+    [HttpPost("{id:int}/approve")]
+    public async Task<IActionResult> Approve(int id, [FromBody] ApproveNoticeRequest request, CancellationToken ct)
     {
         var result = await sender.Send(new ApproveNoticeCommand(id, request.ApprovedBy), ct);
         return result.ToActionResult(this);
     }
 
-    [HttpPost("{id:guid}/reject")]
-    public async Task<IActionResult> Reject(Guid id, [FromBody] RejectNoticeRequest request, CancellationToken ct)
+    [HttpPost("{id:int}/reject")]
+    public async Task<IActionResult> Reject(int id, [FromBody] RejectNoticeRequest request, CancellationToken ct)
     {
         var result = await sender.Send(new RejectNoticeCommand(id, request.RejectedBy, request.Reason), ct);
         return result.ToActionResult(this);
     }
 
-    [HttpPost("{id:guid}/sync")]
-    public async Task<IActionResult> Synchronize(Guid id, CancellationToken ct)
+    [HttpPost("{id:int}/sync")]
+    public async Task<IActionResult> Synchronize(int id, CancellationToken ct)
     {
         var result = await sender.Send(new SynchronizeNoticeCommand(id), ct);
         return result.IsSuccess ? Ok() : result.Error.Code.EndsWith(".NotFound") ? NotFound(result.Error) : BadRequest(result.Error);
     }
 
-    [HttpPost("{noticeId:guid}/operations/{operationId:guid}/start")]
+    [HttpPost("{noticeId:int}/operations/{operationId:int}/start")]
     public async Task<IActionResult> StartOperation(
-        Guid noticeId, Guid operationId,
+        int noticeId, int operationId,
         [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] StartOperationRequest? request,
         CancellationToken ct)
     {
@@ -90,9 +90,9 @@ public sealed class NoticesController(ISender sender) : ControllerBase
         return result.ToActionResult(this);
     }
 
-    [HttpPost("{noticeId:guid}/operations/{operationId:guid}/complete")]
+    [HttpPost("{noticeId:int}/operations/{operationId:int}/complete")]
     public async Task<IActionResult> CompleteOperation(
-        Guid noticeId, Guid operationId,
+        int noticeId, int operationId,
         [FromBody] CompleteOperationRequest request,
         CancellationToken ct)
     {

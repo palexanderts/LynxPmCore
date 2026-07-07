@@ -4,7 +4,7 @@ namespace LynxPmCore.Application.DTOs;
 
 public sealed class OperationDto
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public OperationType Type { get; set; }

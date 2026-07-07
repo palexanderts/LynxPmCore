@@ -4,7 +4,7 @@ namespace LynxPmCore.Application.DTOs;
 
 public sealed class NoticeDto
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
     public string Number { get; set; } = string.Empty;
     public string EquipmentCode { get; set; } = string.Empty;
     public string? Description { get; set; }
@@ -16,7 +16,6 @@ public sealed class NoticeDto
     public string? ApprovedBy { get; set; }
     public string? RejectionReason { get; set; }
     public bool IsSynchronized { get; set; }
-    public string? ApexId { get; set; }
     public string CreatedBy { get; set; } = string.Empty;
     public string? Location { get; set; }
     public string? Customer { get; set; }
@@ -30,11 +29,19 @@ public sealed class NoticeDto
     public DateTime UpdatedAt { get; set; }
     public List<OperationDto> Operations { get; set; } = [];
     public List<EquipmentMediaDto> EquipmentMedia { get; set; } = [];
+    public List<NoticeCauseDto> Causes { get; set; } = [];
+}
+
+public sealed class NoticeCauseDto
+{
+    public int Id { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string? Text { get; set; }
 }
 
 public sealed class NoticeListDto
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
     public string Number { get; set; } = string.Empty;
     public string EquipmentCode { get; set; } = string.Empty;
     public string? Description { get; set; }
@@ -57,6 +64,5 @@ public sealed class NoticeChangeDto
     public string? Description { get; set; }
     public string Status { get; set; } = string.Empty;
     public bool IsApproved { get; set; }
-    public string? ApexId { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

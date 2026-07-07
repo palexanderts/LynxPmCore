@@ -3,6 +3,6 @@ using LynxPmCore.Shared.Abstractions;
 namespace LynxPmCore.Application.Features.Notices.Commands.StartOperation;
 
 public sealed record StartOperationCommand(
-    Guid NoticeId,
-    Guid OperationId,
+    int NoticeId,
+    int OperationId,
     string? ScannedEquipmentCode = null) : ICommand, ITransactional;

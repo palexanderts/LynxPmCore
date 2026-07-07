@@ -219,7 +219,7 @@ public sealed class IndexController(
                         existing.ChangeStatus(newStatus);
                 }
                 await noticeRepo.UpdateAsync(existing, ct);
-                responses.Add(new AvisoOrdsResponse("", "", 0, 0, avisoNum, "", existing.ApexId ?? "", "SET"));
+                responses.Add(new AvisoOrdsResponse("", "", 0, 0, avisoNum, "", existing.Number, "SET"));
             }
         }
 
@@ -246,7 +246,7 @@ public sealed class IndexController(
             await unitOfWork.SaveChangesAsync(ct);
         }
 
-        return Ok(new[] { new AvisoOrdsResponse("", "", 0, 0, avisoNum, "", notice.ApexId ?? "", "STATUS") });
+        return Ok(new[] { new AvisoOrdsResponse("", "", 0, 0, avisoNum, "", notice.Number, "STATUS") });
     }
 
     private async Task<IActionResult> HandleCierreTecnico(JsonElement? body, CancellationToken ct)
@@ -263,7 +263,7 @@ public sealed class IndexController(
         await noticeRepo.UpdateAsync(notice, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return Ok(new[] { new AvisoOrdsResponse("", "", 0, 0, avisoNum, "", notice.ApexId ?? "", "CLOSE") });
+        return Ok(new[] { new AvisoOrdsResponse("", "", 0, 0, avisoNum, "", notice.Number, "CLOSE") });
     }
 
     // ── Equipment handlers ───────────────────────────────────────────────────────
@@ -377,7 +377,7 @@ public sealed class IndexController(
 
     private static AvisoHeaderOrdsResponse MapToHeader(Notice n) => new(
         Aviso:       n.Number,
-        AvisoSap:    n.ApexId ?? "",
+        AvisoSap:    n.Number,
         OrdenSap:    "",
         Equipo:      n.EquipmentCode,
         Descripcion: n.Description ?? "",
@@ -394,7 +394,7 @@ public sealed class IndexController(
         CerradoPor:  n.Status == NoticeStatus.Closed ? (n.ApprovedBy ?? n.CreatedBy) : "");
 
     private static EquipmentHistoryOrdsResponse MapToHistoryResponse(Notice n) => new(
-        Id:          long.TryParse(n.ApexId, out var id) ? id : 0,
+        Id:          n.Id,
         AvisoId:     n.Number,
         Description: n.Description ?? "",
         Status:      MapStatus(n.Status),

@@ -18,12 +18,14 @@ internal sealed class CompleteOperationCommandHandler(
         var operation = notice.Operations.FirstOrDefault(o => o.Id == request.OperationId);
         if (operation is null) return Result.Failure(DomainErrors.Operation.NotFound);
 
-        var result = operation.Complete(
-            request.Notes,
-            request.PhotoConfirmed,
-            request.Failure,
-            request.Causes?.Select(c => (c.Code, c.Text)).ToList());
+        var result = operation.Complete(request.Notes, request.PhotoConfirmed, request.Failure);
         if (result.IsFailure) return result;
+
+        if (request.Causes is not null)
+        {
+            foreach (var cause in request.Causes)
+                notice.AddCause(cause.Code, cause.Text);
+        }
 
         await noticeRepository.UpdateAsync(notice, ct);
         await unitOfWork.SaveChangesAsync(ct);

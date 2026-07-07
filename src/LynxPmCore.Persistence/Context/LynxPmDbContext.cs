@@ -14,7 +14,7 @@ public sealed class LynxPmDbContext(DbContextOptions<LynxPmDbContext> options) :
 {
     public DbSet<Notice> Notices => Set<Notice>();
     public DbSet<Operation> Operations => Set<Operation>();
-    public DbSet<OperationCause> OperationCauses => Set<OperationCause>();
+    public DbSet<NoticeCause> NoticeCauses => Set<NoticeCause>();
     public DbSet<Equipment> Equipments => Set<Equipment>();
     public DbSet<EquipmentMedia> EquipmentMediaItems => Set<EquipmentMedia>();
     public DbSet<Customer> Customers => Set<Customer>();
@@ -42,7 +42,7 @@ public sealed class LynxPmDbContext(DbContextOptions<LynxPmDbContext> options) :
     private void AddOutboxMessages()
     {
         var domainEvents = ChangeTracker
-            .Entries<BaseEntity>()
+            .Entries<IHasDomainEvents>()
             .Select(e => e.Entity)
             .SelectMany(e =>
             {

@@ -1,7 +1,6 @@
 using LynxPmCore.Application.Common.Interfaces;
 using LynxPmCore.Domain.Repositories;
 using LynxPmCore.Persistence.Context;
-using LynxPmCore.Persistence.Legacy;
 using LynxPmCore.Persistence.Processors;
 using LynxPmCore.Persistence.Repositories;
 using LynxPmCore.Persistence.UnitOfWork;
@@ -35,7 +34,6 @@ public static class DependencyInjection
         services.AddScoped<IComponentCatalogRepository, ComponentCatalogRepository>();
         services.AddScoped<IComponentNotificationRepository, ComponentNotificationRepository>();
         services.AddScoped<IUnitOfWork, LynxPmCore.Persistence.UnitOfWork.UnitOfWork>();
-        services.AddScoped<ILegacyAvisoReader, LegacyAvisoReader>();
         services.AddScoped<OutboxProcessor>();
 
         return services;

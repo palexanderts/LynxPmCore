@@ -6,9 +6,10 @@ using LynxPmCore.Shared.Common;
 
 namespace LynxPmCore.Domain.Aggregates.Notices;
 
-public sealed class Notice : AggregateRoot
+public sealed class Notice : IntAggregateRoot
 {
     private readonly List<Operation> _operations = [];
+    private readonly List<NoticeCause> _causes = [];
     private Notice() { }
 
     public string Number { get; private set; } = string.Empty;
@@ -16,7 +17,6 @@ public sealed class Notice : AggregateRoot
     public string? Description { get; private set; }
     public NoticeStatus Status { get; private set; }
     public bool IsApproved { get; private set; }
-    public string? ApexId { get; private set; }
     public bool IsSynchronized { get; private set; }
     public DateTime? SynchronizedAt { get; private set; }
     public string CreatedBy { get; private set; } = string.Empty;
@@ -37,6 +37,7 @@ public sealed class Notice : AggregateRoot
         NoticeApprovalStatus.Pending;
 
     public IReadOnlyList<Operation> Operations => _operations;
+    public IReadOnlyList<NoticeCause> Causes => _causes;
 
     public static Result<Notice> Create(
         string number,
@@ -123,11 +124,27 @@ public sealed class Notice : AggregateRoot
         return Result.Success();
     }
 
-    public void MarkSynchronized(string? apexId = null)
+    // Usado solo por NoticeRepository: AVISOID en LYNX_PM_AVISO_OPERATIONS es
+    // VARCHAR2 sin FK real y con valores históricos inconsistentes (no siempre
+    // numéricos) — un Include() vía join fuerza a Oracle a convertir toda la
+    // columna a número y truena con esas filas. Se hidrata Operations con una
+    // consulta separada (columna = parámetro, sin join) en vez de Include().
+    public void HydrateOperations(IReadOnlyList<Operation> operations)
+    {
+        _operations.Clear();
+        _operations.AddRange(operations);
+    }
+
+    public void MarkSynchronized()
     {
         IsSynchronized = true;
         SynchronizedAt = DateTime.UtcNow;
-        if (apexId != null) ApexId = apexId;
+        MarkUpdated();
+    }
+
+    public void AddCause(string code, string? text)
+    {
+        _causes.Add(NoticeCause.Create(Id, code, text));
         MarkUpdated();
     }
 }

@@ -5,10 +5,10 @@ namespace LynxPmCore.Domain.Events;
 public sealed record OperationCompletedDomainEvent(
     Guid Id,
     DateTime OccurredOnUtc,
-    Guid OperationId,
-    Guid NoticeId,
+    int OperationId,
+    int NoticeId,
     string? Notes) : DomainEvent(Id, OccurredOnUtc)
 {
-    public OperationCompletedDomainEvent(Guid operationId, Guid noticeId, string? notes)
+    public OperationCompletedDomainEvent(int operationId, int noticeId, string? notes)
         : this(Guid.NewGuid(), DateTime.UtcNow, operationId, noticeId, notes) { }
 }

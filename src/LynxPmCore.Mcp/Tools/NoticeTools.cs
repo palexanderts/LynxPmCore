@@ -35,7 +35,7 @@ public sealed class NoticeTools(ISender sender)
     [McpServerTool]
     [Description("Get full details of a single notice by its ID.")]
     public async Task<string> get_notice(
-        [Description("Notice ID (GUID)")] Guid id,
+        [Description("Notice ID")] int id,
         CancellationToken ct = default)
     {
         var result = await sender.Send(new GetNoticeByIdQuery(id), ct);
@@ -65,7 +65,7 @@ public sealed class NoticeTools(ISender sender)
     [McpServerTool]
     [Description("Change the status of a notice. Valid statuses: Open, InProgress, Paused, Completed, Closed, Cancelled.")]
     public async Task<string> change_notice_status(
-        [Description("Notice ID (GUID)")] Guid id,
+        [Description("Notice ID")] int id,
         [Description("New status: Open, InProgress, Paused, Completed, Closed, Cancelled")] string newStatus,
         CancellationToken ct = default)
     {
