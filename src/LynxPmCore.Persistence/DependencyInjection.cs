@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IComponentReceiptRepository, ComponentReceiptRepository>();
         services.AddScoped<IComponentCatalogRepository, ComponentCatalogRepository>();
         services.AddScoped<IComponentNotificationRepository, ComponentNotificationRepository>();
+        services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<IUnitOfWork, LynxPmCore.Persistence.UnitOfWork.UnitOfWork>();
         services.AddScoped<OutboxProcessor>();
 

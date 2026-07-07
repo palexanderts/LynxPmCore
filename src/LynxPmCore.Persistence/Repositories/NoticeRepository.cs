@@ -31,6 +31,7 @@ internal sealed class NoticeRepository(LynxPmDbContext db) : INoticeRepository
     // join sí forzaría convertir toda la columna y truena con esas filas viejas.
     private async Task<List<Operation>> GetOperationsAsync(int noticeId, CancellationToken ct)
         => await db.Set<Operation>()
+            .Include(o => o.Parts)
             .Where(o => o.NoticeId == noticeId && !o.IsDeleted)
             .OrderBy(o => o.Position)
             .ToListAsync(ct);

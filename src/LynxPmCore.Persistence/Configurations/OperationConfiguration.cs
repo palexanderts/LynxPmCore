@@ -37,5 +37,13 @@ internal sealed class OperationConfiguration : IEntityTypeConfiguration<Operatio
         builder.Property(o => o.IsDeleted).HasColumnName("IS_DELETED"); // columna nueva, aditiva
 
         builder.HasIndex(o => o.NoticeId);
+
+        // Seguro (a diferencia de NoticeId/AVISOID): Operation.Id y OperationPart.OperationId
+        // son ambos int nativos sin conversion de tipo, sin riesgo de cast sobre columna sucia.
+        builder.HasMany(o => o.Parts)
+            .WithOne()
+            .HasForeignKey(p => p.OperationId);
+        builder.Navigation(o => o.Parts)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

@@ -12,7 +12,9 @@ public sealed class NoticeProfile : Profile
             .ForMember(d => d.Operations, o => o.MapFrom(s => s.Operations))
             .ForMember(d => d.Causes, o => o.MapFrom(s => s.Causes));
         CreateMap<Notice, NoticeListDto>();
-        CreateMap<Operation, OperationDto>();
+        CreateMap<Operation, OperationDto>()
+            .ForMember(d => d.Parts, o => o.MapFrom(s => s.Parts));
         CreateMap<NoticeCause, NoticeCauseDto>();
+        CreateMap<OperationPart, OperationPartDto>();
     }
 }

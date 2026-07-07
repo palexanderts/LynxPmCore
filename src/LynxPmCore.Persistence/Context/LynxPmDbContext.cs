@@ -15,6 +15,7 @@ public sealed class LynxPmDbContext(DbContextOptions<LynxPmDbContext> options) :
     public DbSet<Notice> Notices => Set<Notice>();
     public DbSet<Operation> Operations => Set<Operation>();
     public DbSet<NoticeCause> NoticeCauses => Set<NoticeCause>();
+    public DbSet<OperationPart> OperationParts => Set<OperationPart>();
     public DbSet<Equipment> Equipments => Set<Equipment>();
     public DbSet<EquipmentMedia> EquipmentMediaItems => Set<EquipmentMedia>();
     public DbSet<Customer> Customers => Set<Customer>();

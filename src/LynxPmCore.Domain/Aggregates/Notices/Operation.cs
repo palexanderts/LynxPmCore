@@ -7,6 +7,7 @@ namespace LynxPmCore.Domain.Aggregates.Notices;
 
 public sealed class Operation : IntEntity
 {
+    private readonly List<OperationPart> _parts = [];
     private Operation() { }
 
     public int NoticeId { get; private set; }
@@ -22,8 +23,11 @@ public sealed class Operation : IntEntity
     public bool PhotoConfirmed { get; private set; }
     public string? AssignedTechnician { get; private set; }
 
-    // Falla: la registra el técnico al completar la operación (diagnóstico).
+    // Falla: la registra el técnico al completar o notificar la operación (diagnóstico).
     public string? Failure { get; private set; }
+
+    // Partes objeto reportadas al notificar la operación (varias por notificación).
+    public IReadOnlyList<OperationPart> Parts => _parts;
 
     public static Operation Create(
         int noticeId,
@@ -97,6 +101,26 @@ public sealed class Operation : IntEntity
 
         RaiseDomainEvent(new OperationCompletedDomainEvent(Id, NoticeId, notes));
         return Result.Success();
+    }
+
+    // Reporte intermedio mientras la operación sigue en curso -- a diferencia de
+    // Complete(), no cambia Status ni CompletedAt, y se puede llamar varias veces.
+    public Result Notify(string? failure)
+    {
+        if (Status == OperationStatus.Completed)
+            return Result.Failure(DomainErrors.Operation.AlreadyCompleted);
+
+        Failure = failure;
+        MarkUpdated();
+
+        RaiseDomainEvent(new OperationNotifiedDomainEvent(Id, NoticeId, failure));
+        return Result.Success();
+    }
+
+    public void AddPart(string code, string? text)
+    {
+        _parts.Add(OperationPart.Create(Id, code, text));
+        MarkUpdated();
     }
 }
 

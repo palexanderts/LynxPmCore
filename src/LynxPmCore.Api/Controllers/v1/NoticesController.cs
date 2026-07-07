@@ -4,6 +4,7 @@ using LynxPmCore.Application.Features.Notices.Commands.ApproveNotice;
 using LynxPmCore.Application.Features.Notices.Commands.ChangeNoticeStatus;
 using LynxPmCore.Application.Features.Notices.Commands.CompleteOperation;
 using LynxPmCore.Application.Features.Notices.Commands.CreateNotice;
+using LynxPmCore.Application.Features.Notices.Commands.NotifyOperation;
 using LynxPmCore.Application.Features.Notices.Commands.RejectNotice;
 using LynxPmCore.Application.Features.Notices.Commands.StartOperation;
 using LynxPmCore.Application.Features.Notices.Commands.SynchronizeNotice;
@@ -107,6 +108,23 @@ public sealed class NoticesController(ISender sender) : ControllerBase
             ct);
         return result.ToActionResult(this);
     }
+
+    [HttpPost("{noticeId:int}/operations/{operationId:int}/notify")]
+    public async Task<IActionResult> NotifyOperation(
+        int noticeId, int operationId,
+        [FromBody] NotifyOperationRequest request,
+        CancellationToken ct)
+    {
+        var result = await sender.Send(
+            new NotifyOperationCommand(
+                noticeId,
+                operationId,
+                request.Failure,
+                request.Causes?.Select(c => new NotifyOperationCauseInput(c.Code, c.Text)).ToList(),
+                request.Parts?.Select(p => new NotifyOperationPartInput(p.Code, p.Text)).ToList()),
+            ct);
+        return result.ToActionResult(this);
+    }
 }
 
 public sealed record ApproveNoticeRequest(string ApprovedBy);
@@ -119,3 +137,9 @@ public sealed record CompleteOperationRequest(
     string? Failure = null,
     IReadOnlyList<CompleteOperationCauseRequest>? Causes = null);
 public sealed record CompleteOperationCauseRequest(string Code, string? Text);
+public sealed record NotifyOperationRequest(
+    string? Failure = null,
+    IReadOnlyList<NotifyOperationCauseRequest>? Causes = null,
+    IReadOnlyList<NotifyOperationPartRequest>? Parts = null);
+public sealed record NotifyOperationCauseRequest(string Code, string? Text);
+public sealed record NotifyOperationPartRequest(string Code, string? Text);

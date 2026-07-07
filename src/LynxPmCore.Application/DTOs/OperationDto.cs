@@ -16,4 +16,13 @@ public sealed class OperationDto
     public DateTime? CompletedAt { get; set; }
     public string? Notes { get; set; }
     public string? AssignedTechnician { get; set; }
+    public string? Failure { get; set; }
+    public List<OperationPartDto> Parts { get; set; } = [];
+}
+
+public sealed class OperationPartDto
+{
+    public int Id { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string? Text { get; set; }
 }
